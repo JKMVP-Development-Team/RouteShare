@@ -14,6 +14,12 @@
                 "simulator": true
             }
         },
+        "android-simulator": {
+            "extends": "development",
+            "android": {
+                "simulator": true
+            }
+        },
         "preview": {
             "distribution": "internal"
         },
