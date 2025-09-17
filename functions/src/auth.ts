@@ -13,6 +13,15 @@ export const createUser = onRequest(async (req, res) => {
       emailVerified: false,
     });
     
+    await admin.firestore().collection('users').doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      email: userRecord.email,
+      displayName: userRecord.displayName,
+      joinedAt: admin.firestore.FieldValue.serverTimestamp(),
+      stats: { routesCreated: 0, partiesJoined: 0, totalDistance: 0 },
+      preferences: { units: 'metric', privacy: 'public' },
+    });
+    
     res.json({ 
       success: true, 
       uid: userRecord.uid,
@@ -31,53 +40,7 @@ export const deleteUser = onRequest(async (req, res) => {
     const { uid } = req.body;
     
     await admin.auth().deleteUser(uid);
-    
-    // Also delete user's data from Firestore
     await admin.firestore().collection('users').doc(uid).delete();
-    
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    });
-  }
-});
-
-// Get user information
-export const getUser = onRequest(async (req, res) => {
-  try {
-    const { uid } = req.query;
-    
-    if (!uid) {
-      res.status(400).json({ error: "uid is required" });
-      return;
-    }
-    
-    const userRecord = await admin.auth().getUser(uid as string);
-    
-    res.json({
-      uid: userRecord.uid,
-      email: userRecord.email,
-      displayName: userRecord.displayName,
-      emailVerified: userRecord.emailVerified,
-      creationTime: userRecord.metadata.creationTime
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    });
-  }
-});
-
-// Update user profile
-export const updateUserProfile = onRequest(async (req, res) => {
-  try {
-    const { uid, displayName, email } = req.body;
-    
-    await admin.auth().updateUser(uid, {
-      displayName,
-      email
-    });
     
     res.json({ success: true });
   } catch (error) {

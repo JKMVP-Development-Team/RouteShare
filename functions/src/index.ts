@@ -9,10 +9,8 @@
 
 import * as admin from "firebase-admin";
 import { setGlobalOptions } from "firebase-functions";
-import { onDocumentCreated } from "firebase-functions/firestore";
-import { onRequest } from "firebase-functions/v2/https";
 
-import { createUser, deleteUser, getUser, updateUserProfile } from "./auth";
+import { createUser, deleteUser } from "./auth";
 import { deleteRoute, getUserRoutes } from "./routes";
 
 // Start writing functions
@@ -38,18 +36,5 @@ setGlobalOptions({ maxInstances: 10 });
 admin.initializeApp();
 
 
-export const createRoute = onRequest(async (req, res) => {
-    try {
-        const routeData = req.body;
-        const docRef = await admin.firestore().collection('routes').add(routeData);
-        res.json({ success: true, id: docRef.id });
-    } catch (error) {
-        res.status(500).json({ error: error instanceof Error ? error.message : 'An unknown error occurred' });
-    }
-});
+export { createUser, deleteRoute, deleteUser, getUserRoutes };
 
-export const onRouteCreated = onDocumentCreated("routes/{routeId}", (event) => {
-    console.log("New route created:", event.data?.id);
-});
-
-export { createUser, deleteRoute, deleteUser, getUser, getUserRoutes, updateUserProfile };
