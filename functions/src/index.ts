@@ -12,6 +12,7 @@ import { setGlobalOptions } from "firebase-functions";
 
 import { createUser, deleteUser } from "./auth";
 import { deleteRoute, getUserRoutes } from "./routes";
+import { acceptFriendRequest, getFriendSuggestions, rejectFriendRequest, sendFriendRequest } from "./user";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -36,5 +37,7 @@ setGlobalOptions({ maxInstances: 10 });
 admin.initializeApp();
 
 
-export { createUser, deleteRoute, deleteUser, getUserRoutes };
+export {
+    acceptFriendRequest, createUser, deleteRoute, deleteUser, getFriendSuggestions, getUserRoutes, rejectFriendRequest, sendFriendRequest
+};
 
