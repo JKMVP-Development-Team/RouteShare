@@ -1,15 +1,15 @@
 
 import * as admin from "firebase-admin";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { onRequest } from "firebase-functions/v2/https";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import {onRequest} from "firebase-functions/v2/https";
 
 const verifyUser = async (req: any) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    throw new Error('No authorization token provided');
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new Error("No authorization token provided");
   }
-  
-  const token = authHeader.split('Bearer ')[1];
+
+  const token = authHeader.split("Bearer ")[1];
   const decodedToken = await admin.auth().verifyIdToken(token);
   return decodedToken.uid;
 };
@@ -17,18 +17,18 @@ const verifyUser = async (req: any) => {
 export const createRoute = onRequest(async (req, res) => {
   try {
     const userId = await verifyUser(req);
-    
+
     const routeData = {
       ...req.body,
       userId: userId,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
-    
-    const docRef = await admin.firestore().collection('routes').add(routeData);
-    res.json({ success: true, id: docRef.id });
+
+    const docRef = await admin.firestore().collection("routes").add(routeData);
+    res.json({success: true, id: docRef.id});
   } catch (error) {
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "An unknown error occurred",
     });
   }
 });
@@ -43,21 +43,21 @@ export const onRouteCreated = onDocumentCreated("routes/{routeId}", (event) => {
 export const getUserRoutes = onRequest(async (req, res) => {
   try {
     const userId = await verifyUser(req);
-    
+
     const snapshot = await admin.firestore()
-      .collection('routes')
-      .where('userId', '==', userId)
+      .collection("routes")
+      .where("userId", "==", userId)
       .get();
-    
+
     const routes = snapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
     }));
-    
-    res.json({ routes });
+
+    res.json({routes});
   } catch (error) {
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Failed to get routes' 
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to get routes",
     });
   }
 });
@@ -66,27 +66,27 @@ export const getUserRoutes = onRequest(async (req, res) => {
 export const deleteRoute = onRequest(async (req, res) => {
   try {
     const userId = await verifyUser(req);
-    const { routeId } = req.body;
-    
-    const routeRef = admin.firestore().collection('routes').doc(routeId);
+    const {routeId} = req.body;
+
+    const routeRef = admin.firestore().collection("routes").doc(routeId);
     const routeDoc = await routeRef.get();
-    
+
     if (!routeDoc.exists) {
-      res.status(404).json({ error: 'Route not found' });
+      res.status(404).json({error: "Route not found"});
       return;
     }
-    
+
     const routeData = routeDoc.data();
     if (routeData?.userId !== userId) {
-      res.status(403).json({ error: 'Not authorized to delete this route' });
+      res.status(403).json({error: "Not authorized to delete this route"});
       return;
     }
-    
+
     await routeRef.delete();
-    res.json({ success: true });
+    res.json({success: true});
   } catch (error) {
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Failed to delete route' 
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to delete route",
     });
   }
 });

@@ -8,11 +8,11 @@
  */
 
 import * as admin from "firebase-admin";
-import { setGlobalOptions } from "firebase-functions";
+import {setGlobalOptions} from "firebase-functions";
 
-import { createUser, deleteUser } from "./auth";
-import { deleteRoute, getUserRoutes } from "./routes";
-import { acceptFriendRequest, getFriendSuggestions, rejectFriendRequest, sendFriendRequest } from "./user";
+import {createUser, deleteUser} from "./auth";
+import {deleteRoute, getUserRoutes} from "./routes";
+import {acceptFriendRequest, getFriendSuggestions, rejectFriendRequest, sendFriendRequest} from "./user";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -27,7 +27,7 @@ import { acceptFriendRequest, getFriendSuggestions, rejectFriendRequest, sendFri
 // functions should each use functions.runWith({ maxInstances: 10 }) instead.
 // In the v1 API, each function can only serve one request per container, so
 // this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+setGlobalOptions({maxInstances: 10});
 
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
@@ -38,6 +38,6 @@ admin.initializeApp();
 
 
 export {
-    acceptFriendRequest, createUser, deleteRoute, deleteUser, getFriendSuggestions, getUserRoutes, rejectFriendRequest, sendFriendRequest
+    acceptFriendRequest, createUser, deleteRoute, deleteUser, getFriendSuggestions, getUserRoutes, rejectFriendRequest, sendFriendRequest,
 };
 
