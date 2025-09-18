@@ -5,6 +5,7 @@
 
 import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
+import { arrayUnion } from "firebase/firestore";
 
 const verifyUser = async (req: any) => {
   const authHeader = req.headers.authorization;
@@ -33,18 +34,27 @@ export const sendFriendRequest = onRequest(async (req: any, res: any) => {
       return res.status(400).json({ error: 'Cannot send friend request to yourself' });
     }
     
-    const db = admin.firestore().batch();
+    const db = admin.firestore();
+    const batch = db.batch();
+    
+    const senderRef = db.collection('users').doc(senderId);
+    const receiverRef = db.collection('users').doc(receiverId);
+    
     batch.update(senderRef, { sentRequests: arrayUnion(receiverId) });
     batch.update(receiverRef, { receivedRequests: arrayUnion(senderId) });
     await batch.commit();
     
-    await admin.messaging().send({
-        token: receiverFCMToken,
-        notification: { title: "New friend request!" }
-    });
+    // did not test this yet.
+    const receiverDoc = await receiverRef.get();
+    const receiverData = receiverDoc.data();
+    const receiverFCMToken = receiverData?.fcmToken;
     
-    // TODO: Send push notification to receiver
-    // await sendNotification(receiverId, `${senderData.displayName} sent you a friend request!`);
+    if (receiverFCMToken) {
+      await admin.messaging().send({
+          token: receiverFCMToken,
+          notification: { title: "New friend request!" }
+      });
+    }
     
     res.json({ success: true, message: 'Friend request sent successfully' });
   } catch (error) {
