@@ -12,11 +12,9 @@ export interface PartyDocument {
   // Party settings
   maxMembers: number;
   isPrivate: boolean;
-  inviteCode?: Promise<{
-    inviteCode: string;
-    qrCode: string;
-  }>; // For joining private parties
-  
+  inviteCode?: string; // For private parties
+  qrCode?: string; // QR code data URL for invites
+    
   // Members and their states
   members: Array<{
     userId: string;
