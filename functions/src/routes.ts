@@ -1,36 +1,30 @@
 
 import * as admin from "firebase-admin";
-import {onDocumentCreated} from "firebase-functions/v2/firestore";
-import {onRequest} from "firebase-functions/v2/https";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { HttpsError, onCall } from "firebase-functions/v2/https";
 
-const verifyUser = async (req: any) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
-    throw new Error("No authorization token provided");
-  }
 
-  const token = authHeader.split("Bearer ")[1];
-  const decodedToken = await admin.auth().verifyIdToken(token);
-  return decodedToken.uid;
-};
 
-export const createRoute = onRequest(async (req, res) => {
-  try {
-    const userId = await verifyUser(req);
+export const createRoute = onCall(async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) {
+      throw new HttpsError("unauthenticated", "User must be authenticated to create a route.");
+    }
 
+    try {
     const routeData = {
-      ...req.body,
+      ...request.data,
       userId: userId,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     const docRef = await admin.firestore().collection("routes").add(routeData);
-    res.json({success: true, id: docRef.id});
+    return {success: true, id: docRef.id};
   } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : "An unknown error occurred",
-    });
+    console.error("Error creating route:", error);
+    throw new HttpsError("internal", "Failed to create route.");
   }
+
 });
 
 export const onRouteCreated = onDocumentCreated("routes/{routeId}", (event) => {
@@ -40,9 +34,13 @@ export const onRouteCreated = onDocumentCreated("routes/{routeId}", (event) => {
     // Process route data i.e. use Google maps routing API etc.
 });
 
-export const getUserRoutes = onRequest(async (req, res) => {
+export const getUserRoutes = onCall(async (res) => {
+  const userId = res.auth?.uid;
+  if (!userId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated to get routes.");
+  }
+
   try {
-    const userId = await verifyUser(req);
 
     const snapshot = await admin.firestore()
       .collection("routes")
@@ -54,39 +52,43 @@ export const getUserRoutes = onRequest(async (req, res) => {
       ...doc.data(),
     }));
 
-    res.json({routes});
+    return {routes};
   } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : "Failed to get routes",
-    });
+    console.error("Error fetching user routes:", error);
+    throw new HttpsError("internal", "Failed to fetch user routes.");
   }
 });
 
 
-export const deleteRoute = onRequest(async (req, res) => {
+export const deleteRoute = onCall(async (res) => {
+  const userId = res.auth?.uid;
+  if (!userId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated to delete a route.");
+  }
+
+  const {routeId} = res.data;
+  if (!routeId) {
+    throw new HttpsError("invalid-argument", "Route ID is required.");
+  }
+
   try {
-    const userId = await verifyUser(req);
-    const {routeId} = req.body;
 
     const routeRef = admin.firestore().collection("routes").doc(routeId);
     const routeDoc = await routeRef.get();
 
     if (!routeDoc.exists) {
-      res.status(404).json({error: "Route not found"});
-      return;
+      return {error: "Route not found"};
     }
 
     const routeData = routeDoc.data();
     if (routeData?.userId !== userId) {
-      res.status(403).json({error: "Not authorized to delete this route"});
-      return;
+      return {error: "Permission denied"};
     }
 
     await routeRef.delete();
-    res.json({success: true});
+    return {success: true};
   } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : "Failed to delete route",
-    });
+    console.error("Error deleting route:", error);
+    throw new HttpsError("internal", "Failed to delete route.");
   }
 });

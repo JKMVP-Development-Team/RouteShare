@@ -5,7 +5,6 @@ import { Timestamp } from 'firebase/firestore';
 export interface PartyDocument {
   id: string;
   name: string;
-  description?: string;
   routeId: string;
   hostId: string; // Party leader
   createdAt: Timestamp;
@@ -13,7 +12,10 @@ export interface PartyDocument {
   // Party settings
   maxMembers: number;
   isPrivate: boolean;
-  inviteCode?: string; // For joining private parties
+  inviteCode?: Promise<{
+    inviteCode: string;
+    qrCode: string;
+  }>; // For joining private parties
   
   // Members and their states
   members: Array<{

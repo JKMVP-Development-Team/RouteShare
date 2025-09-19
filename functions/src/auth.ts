@@ -1,10 +1,10 @@
 import * as admin from "firebase-admin";
-import {onRequest} from "firebase-functions/v2/https";
+import { HttpsError, onCall } from "firebase-functions/v2/https";
 
 // Create a new user (admin operation)
-export const createUser = onRequest(async (req, res) => {
+export const createUser = onCall(async (res) => {
   try {
-    const {email, password, displayName} = req.body;
+    const {email, password, displayName} = res.data;
 
     const userRecord = await admin.auth().createUser({
       email,
@@ -22,30 +22,23 @@ export const createUser = onRequest(async (req, res) => {
       preferences: {units: "metric", privacy: "public"},
     });
 
-    res.json({
-      success: true,
-      uid: userRecord.uid,
-      email: userRecord.email,
-    });
+
+    return { uid: userRecord.uid, email: userRecord.email };
   } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    throw new HttpsError("internal", error instanceof Error ? error.message : "Unknown error");
   }
 });
 
 // Delete a user (admin operation)
-export const deleteUser = onRequest(async (req, res) => {
+export const deleteUser = onCall(async (res) => {
   try {
-    const {uid} = req.body;
+    const {uid} = res.data;
 
     await admin.auth().deleteUser(uid);
     await admin.firestore().collection("users").doc(uid).delete();
 
-    res.json({success: true});
+    return { success: true };
   } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    throw new HttpsError("internal", error instanceof Error ? error.message : "Unknown error");
   }
 });
