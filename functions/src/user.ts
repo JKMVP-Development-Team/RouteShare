@@ -277,3 +277,67 @@ export const getPendingFriendRequests = onCall(async (request) => {
     throw new HttpsError("internal", "Failed to get pending requests");
   }
 });
+
+
+export const getUserByName = onCall(async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  const { displayName } = request.data;
+  if (!displayName) {
+    throw new HttpsError("invalid-argument", "Display name is required");
+  }
+
+  try {
+    const db = admin.firestore();
+    const usersSnapshot = await db.collection("users")
+      .where("displayName", "==", displayName)
+      .limit(10)
+      .get();
+      
+    const users = usersSnapshot.docs.map(doc => ({
+      userId: doc.id,
+      ...doc.data()
+    }));
+
+    return { users };
+  } catch (error) {
+    console.error("Get user by name error:", error);
+    throw new HttpsError("internal", "Failed to get users by name");
+  }
+});
+
+
+export const getUserByEmail = onCall(async (request) => {
+    const userId = request.auth?.uid;
+  if (!userId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  const { email } = request.data;
+  if (!email) {
+    throw new HttpsError("invalid-argument", "Display name is required");
+  }
+
+
+  try {
+    const db = admin.firestore();
+    const usersSnapshot = await db.collection("users")
+      .where("email", "==", email)
+      .limit(1)
+      .get();
+      
+    const users = usersSnapshot.docs.map(doc => ({
+      userId: doc.id,
+      ...doc.data()
+    }));
+
+    return { users };
+  }
+  catch (error) {
+    console.error("Get user by email error:", error);
+    throw new HttpsError("internal", "Failed to get users by email");
+  }
+});

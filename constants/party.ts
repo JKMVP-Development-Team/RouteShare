@@ -25,7 +25,7 @@ export interface PartyDocument {
   
   // Current party state
   currentState: {
-    status: 'waiting' | 'active' | 'paused' | 'completed' | 'cancelled';
+    status: 'waiting' | 'active' | 'paused' | 'completed' | 'cancelled' | 'disbanded' | 'ended';
     currentWaypointIndex: number;
     startedAt?: Timestamp;
     pausedAt?: Timestamp;
