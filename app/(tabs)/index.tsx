@@ -1,98 +1,193 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
+// app/(tabs)/index.tsx
+import { SidePanel } from '@/components/side-panel';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useState } from 'react';
+import { FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+
+interface Person {
+  id: string;
+  name: string;
+  location: string;
+  distance: string;
+}
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const [isSidePanelVisible, setIsSidePanelVisible] = useState(false);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
+  // Mock data - replace with your actual data
+  const nearbyPeople: Person[] = [
+    { id: '1', name: 'Someone1', location: 'location somewhere', distance: '0.5 mi' },
+    { id: '2', name: 'Someone2', location: 'location somewhere', distance: '0.8 mi' },
+    { id: '3', name: 'Someone3', location: 'location somewhere', distance: '1.2 mi' },
+    { id: '4', name: 'Someone4', location: 'location somewhere', distance: '1.5 mi' },
+  ];
+
+  const renderPersonItem = ({ item }: { item: Person }) => (
+    <TouchableOpacity style={styles.personItem}>
+      <View style={styles.personAvatar}>
+        <ThemedText style={styles.avatarText}>
+          {item.name.charAt(0)}
         </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
+      </View>
+      <View style={styles.personInfo}>
+        <ThemedText type="defaultSemiBold" style={styles.personName}>
+          {item.name}
         </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <ThemedText style={styles.personLocation}>
+          {item.location}
+        </ThemedText>
+      </View>
+      <ThemedText style={styles.distance}>
+        {item.distance}
+      </ThemedText>
+    </TouchableOpacity>
+  );
+
+  return (
+    <ThemedView style={styles.container}>
+      {/* Hamburger Menu Button */}
+      <TouchableOpacity 
+        style={styles.menuButton}
+        onPress={() => setIsSidePanelVisible(true)}
+      >
+        <IconSymbol name="line.3.horizontal" size={24} color={colors.text} />
+      </TouchableOpacity>
+
+      {/* Header with Location - Moved Lower */}
+      <View style={styles.header}>
+        <ThemedText style={styles.locationLabel}>123 Anywhere St, Any City</ThemedText>
+        <ThemedText type="title" style={styles.headerTitle}>
+          Where to?
+        </ThemedText>
+      </View>
+
+      {/* Search Bar */}
+      <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
+        <IconSymbol name="magnifyingglass" size={20} color={colors.tint} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.text }]}
+          placeholder="Search for people or places..."
+          placeholderTextColor={colors.secondaryText}
+        />
+      </View>
+
+      {/* Nearby People List */}
+      <View style={styles.sectionHeader}>
+        <ThemedText type="subtitle">Nearby People</ThemedText>
+      </View>
+
+      <FlatList
+        data={nearbyPeople}
+        renderItem={renderPersonItem}
+        keyExtractor={(item) => item.id}
+        style={styles.list}
+        showsVerticalScrollIndicator={false}
+      />
+
+      {/* Side Panel */}
+      <SidePanel 
+        visible={isSidePanelVisible} 
+        onClose={() => setIsSidePanelVisible(false)} 
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    padding: 16,
   },
-  stepContainer: {
-    gap: 8,
+  menuButton: {
+    position: 'absolute',
+    top: 60, // Adjust this value to position the hamburger button
+    left: 20,
+    zIndex: 1000,
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 8,
+  },
+  header: {
+    marginTop: 100, // Increased from 16 to push header lower
+    marginBottom: 24,
+  },
+  locationLabel: {
+    fontSize: 14,
+    opacity: 0.7,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
+  },
+  sectionHeader: {
+    marginBottom: 16,
+  },
+  list: {
+    flex: 1,
+  },
+  personItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  personAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  personInfo: {
+    flex: 1,
+  },
+  personName: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  personLocation: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  distance: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
   },
 });
