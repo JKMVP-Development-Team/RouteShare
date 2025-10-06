@@ -28,7 +28,7 @@ export default [
         "quotes": ["error", "double"],
         "import/no-unresolved": 0,
         "linebreak-style": "off",
-        "object-curly-spacing": ["error", "never"],
+        "object-curly-spacing": "off",
         "no-trailing-spaces": "error",
         "comma-dangle": ["error", "always-multiline"],
         "eol-last": ["error", "always"],

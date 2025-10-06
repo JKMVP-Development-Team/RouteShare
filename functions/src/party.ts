@@ -1,21 +1,21 @@
+import { randomBytes } from "crypto";
 import * as admin from "firebase-admin";
-import { HttpsError, onCall } from "firebase-functions/v2/https"; // Fix: Use v2 consistently
+import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { Timestamp } from "firebase/firestore";
 import * as QRCode from "qrcode";
 import { PartyDocument } from "../../constants/party";
-
-const db = admin.firestore();
 
 // TODO: Add invite expiration handling
 // TODO: Add party deletion handling
 
 // Create a new party
 export const createParty = onCall(async (request) => {
+  const db = admin.firestore();
   const userId = request.auth?.uid;
   if (!userId) {
     throw new HttpsError(
       "unauthenticated",
-      "User must be authenticated to create a party."
+      "User must be authenticated to create a party.",
     );
   }
 
@@ -26,7 +26,7 @@ export const createParty = onCall(async (request) => {
       inviteCode: inviteData.inviteCode,
       qrCode: inviteData.qrCode,
       expirationDate: Timestamp.fromDate(
-        new Date(Date.now() + 24 * 60 * 60 * 1000)
+        new Date(Date.now() + 24 * 60 * 60 * 1000),
       ), // 24 hours from now
     };
 
@@ -82,11 +82,12 @@ export const createParty = onCall(async (request) => {
 });
 
 export const getPartyDetails = onCall(async (request) => {
+  const db = admin.firestore();
   const userId = request.auth?.uid;
   if (!userId) {
     throw new HttpsError(
       "unauthenticated",
-      "User must be authenticated to get party details."
+      "User must be authenticated to get party details.",
     );
   }
 
@@ -105,7 +106,7 @@ export const getPartyDetails = onCall(async (request) => {
   if (!isMember) {
     throw new HttpsError(
       "permission-denied",
-      "User is not a member of this party."
+      "User is not a member of this party.",
     );
   }
 
@@ -113,11 +114,12 @@ export const getPartyDetails = onCall(async (request) => {
 });
 
 export const getMembers = onCall(async (request) => {
+  const db = admin.firestore();
   const userId = request.auth?.uid;
   if (!userId) {
     throw new HttpsError(
       "unauthenticated",
-      "User must be authenticated to get party members."
+      "User must be authenticated to get party members.",
     );
   }
 
@@ -136,7 +138,7 @@ export const getMembers = onCall(async (request) => {
   if (!isMember) {
     throw new HttpsError(
       "permission-denied",
-      "User is not a member of this party."
+      "User is not a member of this party.",
     );
   }
 
@@ -144,11 +146,12 @@ export const getMembers = onCall(async (request) => {
 });
 
 export const joinParty = onCall(async (request) => {
+  const db = admin.firestore();
   const userId = request.auth?.uid;
   if (!userId) {
     throw new HttpsError(
       "unauthenticated",
-      "User must be authenticated to join a party."
+      "User must be authenticated to join a party.",
     );
   }
 
@@ -172,12 +175,12 @@ export const joinParty = onCall(async (request) => {
 
   const partyData = partyDoc.data() as PartyDocument;
   const isAlreadyMember = partyData.members.some(
-    (member) => member.userId === userId
+    (member) => member.userId === userId,
   );
   if (isAlreadyMember) {
     throw new HttpsError(
       "failed-precondition",
-      "User is already a member of this party."
+      "User is already a member of this party.",
     );
   }
 
@@ -185,7 +188,7 @@ export const joinParty = onCall(async (request) => {
     if (!inviteCode || inviteCode !== partyData.inviteCode) {
       throw new HttpsError(
         "permission-denied",
-        "Invalid invite code for private party."
+        "Invalid invite code for private party.",
       );
     }
   }
@@ -209,11 +212,12 @@ export const joinParty = onCall(async (request) => {
 });
 
 export const leaveParty = onCall(async (request) => {
+  const db = admin.firestore();
   const userId = request.auth?.uid;
   if (!userId) {
     throw new HttpsError(
       "unauthenticated",
-      "User must be authenticated to leave a party."
+      "User must be authenticated to leave a party.",
     );
   }
 
@@ -233,14 +237,14 @@ export const leaveParty = onCall(async (request) => {
   if (!member) {
     throw new HttpsError(
       "failed-precondition",
-      "User is not a member of this party."
+      "User is not a member of this party.",
     );
   }
 
   if (member.role === "host") {
     throw new HttpsError(
       "failed-precondition",
-      "Host cannot leave the party. Transfer host role or disband the party."
+      "Host cannot leave the party. Transfer host role or disband the party.",
     );
   }
   await partyRef.update({
@@ -249,11 +253,12 @@ export const leaveParty = onCall(async (request) => {
 });
 
 export const disbandParty = onCall(async (request) => {
+  const db = admin.firestore();
   const userId = request.auth?.uid;
   if (!userId) {
     throw new HttpsError(
       "unauthenticated",
-      "User must be authenticated to disband a party."
+      "User must be authenticated to disband a party.",
     );
   }
 
@@ -273,7 +278,7 @@ export const disbandParty = onCall(async (request) => {
   if (!member || member.role !== "host") {
     throw new HttpsError(
       "permission-denied",
-      "Only the host can disband the party."
+      "Only the host can disband the party.",
     );
   }
 
@@ -298,15 +303,15 @@ export const disbandParty = onCall(async (request) => {
 
 // Helper function to generate a random invite code
 async function generateInvites(
-  length: number = 6
+  length: number = 6,
 ): Promise<{ inviteCode: string; qrCode: string }> {
   const generateSecureCode = (len: number): string => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let result = "";
-    const randomBytes = require("crypto").randomBytes(len);
+    const bytes = randomBytes(len);
 
     for (let i = 0; i < len; i++) {
-      result += chars[randomBytes[i] % chars.length];
+      result += chars[bytes[i] % chars.length];
     }
     return result;
   };

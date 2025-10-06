@@ -17,7 +17,7 @@ export const sendFriendRequest = onCall(async (request) => {
   }
 
   const {receiverId} = request.data;
-  
+
   if (!receiverId) {
     throw new HttpsError("invalid-argument", "Receiver ID is required.");
   }
@@ -268,7 +268,7 @@ export const getPendingFriendRequests = onCall(async (request) => {
           };
         }
         return null;
-      })
+      }),
     );
 
     return { requests: senderProfiles.filter(Boolean) };
@@ -296,10 +296,10 @@ export const getUserByName = onCall(async (request) => {
       .where("displayName", "==", displayName)
       .limit(10)
       .get();
-      
+
     const users = usersSnapshot.docs.map(doc => ({
       userId: doc.id,
-      ...doc.data()
+      ...doc.data(),
     }));
 
     return { users };
@@ -328,10 +328,10 @@ export const getUserByEmail = onCall(async (request) => {
       .where("email", "==", email)
       .limit(1)
       .get();
-      
+
     const users = usersSnapshot.docs.map(doc => ({
       userId: doc.id,
-      ...doc.data()
+      ...doc.data(),
     }));
 
     return { users };
