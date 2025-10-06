@@ -1,0 +1,325 @@
+// app/friend-requests.tsx
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Stack, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+
+interface FriendRequest {
+  id: string;
+  name: string;
+  username: string;
+  mutualFriends: number;
+  timeAgo: string;
+  avatar?: string;
+}
+
+export default function FriendRequestsScreen() {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
+
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([
+    {
+      id: '1',
+      name: 'Sarah Johnson',
+      username: '@sarahj',
+      mutualFriends: 4,
+      timeAgo: '2 hours ago',
+    },
+    {
+      id: '2',
+      name: 'Mike Chen',
+      username: '@mikechen',
+      mutualFriends: 8,
+      timeAgo: '1 day ago',
+    },
+    {
+      id: '3',
+      name: 'Emily Davis',
+      username: '@emilyd',
+      mutualFriends: 2,
+      timeAgo: '3 days ago',
+    },
+    {
+      id: '4',
+      name: 'Alex Rodriguez',
+      username: '@alexr',
+      mutualFriends: 0,
+      timeAgo: '1 week ago',
+    },
+  ]);
+
+  const handleAcceptRequest = (requestId: string) => {
+    setFriendRequests(prev => prev.filter(request => request.id !== requestId));
+    Alert.alert('Request Accepted', 'You are now friends!');
+  };
+
+  const handleDeclineRequest = (requestId: string) => {
+    setFriendRequests(prev => prev.filter(request => request.id !== requestId));
+    Alert.alert('Request Declined', 'Friend request has been declined.');
+  };
+
+  const handleAcceptAll = () => {
+    setFriendRequests([]);
+    Alert.alert('All Requests Accepted', 'All friend requests have been accepted!');
+  };
+
+  const renderFriendRequest = ({ item }: { item: FriendRequest }) => (
+    <View style={[styles.requestCard, { backgroundColor: colors.background }]}>
+      {/* User Avatar and Info */}
+      <View style={styles.userInfo}>
+        <View style={styles.avatar}>
+          <ThemedText style={styles.avatarText}>
+            {item.name.charAt(0)}
+          </ThemedText>
+        </View>
+        <View style={styles.userDetails}>
+          <ThemedText type="defaultSemiBold" style={styles.userName}>
+            {item.name}
+          </ThemedText>
+          <ThemedText style={styles.username}>
+            {item.username}
+          </ThemedText>
+          {item.mutualFriends > 0 ? (
+            <ThemedText style={styles.mutualFriends}>
+              {item.mutualFriends} mutual friend{item.mutualFriends !== 1 ? 's' : ''}
+            </ThemedText>
+          ) : (
+            <ThemedText style={styles.noMutualFriends}>
+              No mutual friends
+            </ThemedText>
+          )}
+          <ThemedText style={styles.timeAgo}>
+            {item.timeAgo}
+          </ThemedText>
+        </View>
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={[styles.acceptButton, { backgroundColor: colors.tint }]}
+          onPress={() => handleAcceptRequest(item.id)}
+        >
+          <IconSymbol name="checkmark" size={18} color="white" />
+          <ThemedText style={styles.acceptButtonText}>Accept</ThemedText>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.declineButton, { borderColor: colors.border }]}
+          onPress={() => handleDeclineRequest(item.id)}
+        >
+          <IconSymbol name="xmark" size={18} color={colors.text} />
+          <ThemedText style={[styles.declineButtonText, { color: colors.text }]}>
+            Decline
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const ListHeader = () => (
+    <View style={styles.header}>
+      <ThemedText type="title" style={styles.title}>
+        Friend Requests
+      </ThemedText>
+      <ThemedText style={styles.subtitle}>
+        {friendRequests.length} pending request{friendRequests.length !== 1 ? 's' : ''}
+      </ThemedText>
+      
+      {friendRequests.length > 0 && (
+        <TouchableOpacity 
+          style={[styles.acceptAllButton, { backgroundColor: colors.tint }]}
+          onPress={handleAcceptAll}
+        >
+          <IconSymbol name="checkmark.circle.fill" size={20} color="white" />
+          <ThemedText style={styles.acceptAllText}>Accept All</ThemedText>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  const EmptyState = () => (
+    <View style={styles.emptyState}>
+      <IconSymbol name="person.2.slash" size={64} color={colors.icon} />
+      <ThemedText type="subtitle" style={styles.emptyStateTitle}>
+        No Pending Requests
+      </ThemedText>
+      <ThemedText style={styles.emptyStateText}>
+        When someone sends you a friend request, it will appear here.
+      </ThemedText>
+    </View>
+  );
+
+  return (
+    <ThemedView style={styles.container}>
+      <Stack.Screen 
+        options={{ 
+          title: 'Friend Requests',
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ padding: 8 }}>
+              <IconSymbol name="chevron.left" size={24} color={colors.tint} />
+            </TouchableOpacity>
+          ),
+        }} 
+      />
+      
+      <FlatList
+        data={friendRequests}
+        renderItem={renderFriendRequest}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={ListHeader}
+        ListEmptyComponent={EmptyState}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    marginTop: 90,
+  },
+  listContent: {
+    padding: 16,
+    flexGrow: 1,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    opacity: 0.7,
+    marginBottom: 20,
+  },
+  acceptAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  acceptAllText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  requestCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  userDetails: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  userName: {
+    fontSize: 18,
+    marginBottom: 2,
+  },
+  username: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginBottom: 4,
+  },
+  mutualFriends: {
+    fontSize: 14,
+    color: '#007AFF',
+    marginBottom: 2,
+  },
+  noMutualFriends: {
+    fontSize: 14,
+    opacity: 0.5,
+    marginBottom: 2,
+  },
+  timeAgo: {
+    fontSize: 12,
+    opacity: 0.5,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  acceptButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  acceptButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  declineButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+  },
+  declineButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyStateTitle: {
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    textAlign: 'center',
+    opacity: 0.7,
+    lineHeight: 20,
+  },
+});
