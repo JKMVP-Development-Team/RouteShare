@@ -1,41 +1,6 @@
 import { UserProfile } from '@/constants/user';
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { auth, db } from './firebase';
-
-const functions = getFunctions();
-
-const sendFriendRequestCallable = httpsCallable(functions, 'sendFriendRequest');
-const acceptFriendRequestCallable = httpsCallable(functions, 'acceptFriendRequest');
-const declineFriendRequestCallable = httpsCallable(functions, 'declineFriendRequest');
-const getFriendSuggestionsCallable = httpsCallable(functions, 'getFriendSuggestions');
-const getPendingFriendRequestsCallable = httpsCallable(functions, 'getPendingFriendRequests');
-
-export const sendFriendRequest = async (receiverId: string) => {
-    const result = await sendFriendRequestCallable({ receiverId });
-    return result.data;
-};
-
-export const acceptFriendRequest = async (senderId: string) => {
-    const result = await acceptFriendRequestCallable({ senderId });
-    return result.data;
-};
-
-export const declineFriendRequest = async (senderId: string) => {
-    const result = await declineFriendRequestCallable({ senderId});
-    return result.data;
-};
-
-export const getFriendSuggestions = async () => {
-    const result = await getFriendSuggestionsCallable({});
-    return result.data as UserProfile[];
-};
-
-export const getPendingFriendRequests = async () => {
-    const result = await getPendingFriendRequestsCallable({});
-    return result.data as UserProfile[];
-};
-
 
 // Real-time listener for friend requests
 export const onFriendRequestsChange = (callback: (requests: any[]) => void) => {

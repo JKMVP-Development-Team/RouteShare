@@ -1,24 +1,23 @@
 
 
-import { Timestamp } from 'firebase/firestore';
+// All timestamps are stored as milliseconds (number) for consistency between client and server
+// All parties are private by default and require invite codes
 
 export interface PartyDocument {
   id: string;
   name: string;
-  routeId: string;
   hostId: string; // Party leader
-  createdAt: Timestamp;
+  createdAt: number;
   
   // Party settings
   maxMembers: number;
-  isPrivate: boolean;
-  inviteCode?: string; // For private parties
-  qrCode?: string; // QR code data URL for invites
+  inviteCode: string; // Invite code required to join
+  qrCode: string; // QR code data URL for invites
     
   // Members and their states
   members: Array<{
     userId: string;
-    joinedAt: Timestamp;
+    joinedAt: number;
     role: 'host' | 'member';
     status: 'active' | 'inactive' | 'left';
   }>;
@@ -27,15 +26,15 @@ export interface PartyDocument {
   currentState: {
     status: 'waiting' | 'active' | 'paused' | 'completed' | 'cancelled' | 'disbanded' | 'ended';
     currentWaypointIndex: number;
-    startedAt?: Timestamp;
-    pausedAt?: Timestamp;
-    completedAt?: Timestamp;
+    startedAt?: number;
+    pausedAt?: number;
+    completedAt?: number;
     
     // Live tracking
     actualRoute?: Array<{
       latitude: number;
       longitude: number;
-      timestamp: Timestamp;
+      timestamp: number;
       userId: string;
     }>;
   };
@@ -45,7 +44,7 @@ export interface PartyDocument {
     id: string;
     type: 'add_stop' | 'modify_route' | 'skip_waypoint';
     requestedBy: string;
-    requestedAt: Timestamp;
+    requestedAt: number;
     status: 'pending' | 'approved' | 'declined';
     data: any; // Specific change data
   }>;
@@ -63,14 +62,14 @@ export interface LiveLocationDocument {
   userId: string;
   latitude: number;
   longitude: number;
-  timestamp: Timestamp;
+  timestamp: number;
   accuracy: number;
   heading?: number;
   speed?: number;
   batteryLevel?: number;
   
   // Auto-expires after 5 minutes of inactivity
-  expiresAt: Timestamp;
+  expiresAt: number;
 }
 
 
@@ -78,7 +77,7 @@ export interface ChangeRequestDocument {
   id: string;
   type: 'add_stop' | 'modify_route' | 'skip_waypoint' | 'change_destination';
   requestedBy: string;
-  requestedAt: Timestamp;
+  requestedAt: number;
   status: 'pending' | 'approved' | 'declined';
   
   // Request-specific data
@@ -96,8 +95,32 @@ export interface ChangeRequestDocument {
   
   // Host response
   hostResponse?: {
-    approvedAt?: Timestamp;
-    declinedAt?: Timestamp;
+    approvedAt?: number;
+    declinedAt?: number;
     reason?: string;
   };
+}
+
+
+export interface CreatePartyParams {
+  name: string;
+  maxMembers?: number;
+}
+
+export interface CreatePartyResponse {
+  partyId: string;
+  inviteCode: string;
+  qrCode: string;
+}
+
+export interface JoinPartyParams {
+  partyId: string;
+  inviteCode: string;
+}
+
+export interface PartyMember {
+  userId: string;
+  joinedAt: any;
+  role: 'host' | 'member';
+  status: 'active' | 'inactive' | 'left';
 }

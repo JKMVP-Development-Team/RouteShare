@@ -1,7 +1,6 @@
 import { randomBytes } from "crypto";
 import * as admin from "firebase-admin";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { Timestamp } from "firebase/firestore";
 import * as QRCode from "qrcode";
 import { PartyDocument } from "../../constants/party";
 
@@ -19,41 +18,37 @@ export const createParty = onCall(async (request) => {
     );
   }
 
-  let inviteData;
-  if (request.data.isPrivate) {
-    inviteData = await generateInvites();
-    const inviteRef = {
-      inviteCode: inviteData.inviteCode,
-      qrCode: inviteData.qrCode,
-      expirationDate: Timestamp.fromDate(
-        new Date(Date.now() + 24 * 60 * 60 * 1000),
-      ), // 24 hours from now
-    };
+  const now = Date.now();
+  
+  // Always generate invite codes (all parties are private)
+  const inviteData = await generateInvites();
+  const inviteRef = {
+    inviteCode: inviteData.inviteCode,
+    qrCode: inviteData.qrCode,
+    expirationDate: now + (24 * 60 * 60 * 1000), // 24 hours from now
+  };
 
-    // Store invite data in a separate collection
-    await db.collection("inviteCode").add({
-      ...inviteRef,
-      createdAt: Timestamp.now(),
-      createdBy: userId,
-    });
-  }
+  // Store invite data in a separate collection
+  await db.collection("inviteCode").add({
+    ...inviteRef,
+    createdAt: now,
+    createdBy: userId,
+  });
 
   const partyData: PartyDocument = {
     id: "", // Firestore will auto-generate
     name: request.data.name,
-    routeId: request.data.routeId,
     hostId: userId,
-    createdAt: Timestamp.now(),
+    createdAt: now,
 
     maxMembers: request.data.maxMembers || 10,
-    isPrivate: request.data.isPrivate || false,
-    inviteCode: inviteData?.inviteCode,
-    qrCode: inviteData?.qrCode,
+    inviteCode: inviteData.inviteCode,
+    qrCode: inviteData.qrCode,
 
     members: [
       {
         userId: userId,
-        joinedAt: Timestamp.now(),
+        joinedAt: now,
         role: "host",
         status: "active",
       },
@@ -184,13 +179,12 @@ export const joinParty = onCall(async (request) => {
     );
   }
 
-  if (partyData.isPrivate) {
-    if (!inviteCode || inviteCode !== partyData.inviteCode) {
-      throw new HttpsError(
-        "permission-denied",
-        "Invalid invite code for private party.",
-      );
-    }
+  // All parties are private - validate invite code
+  if (!inviteCode || inviteCode !== partyData.inviteCode) {
+    throw new HttpsError(
+      "permission-denied",
+      "Invalid invite code. Please enter the correct code to join this party.",
+    );
   }
 
   if (partyData.members.length >= partyData.maxMembers) {
@@ -199,13 +193,16 @@ export const joinParty = onCall(async (request) => {
 
   const newMember = {
     userId: userId,
-    joinedAt: Timestamp.now(),
-    role: "member",
-    status: "active",
+    joinedAt: Date.now(),
+    role: "member" as const,
+    status: "active" as const,
   };
 
+  // Add the new member to the members array
+  const updatedMembers = [...partyData.members, newMember];
+
   await partyRef.update({
-    members: admin.firestore.FieldValue.arrayUnion(newMember),
+    members: updatedMembers,
   });
 
   return { success: true };
@@ -247,9 +244,15 @@ export const leaveParty = onCall(async (request) => {
       "Host cannot leave the party. Transfer host role or disband the party.",
     );
   }
+
+  // Remove the member from the members array
+  const updatedMembers = partyData.members.filter((m) => m.userId !== userId);
+
   await partyRef.update({
-    members: admin.firestore.FieldValue.arrayRemove(member),
+    members: updatedMembers,
   });
+
+  return { success: true };
 });
 
 export const disbandParty = onCall(async (request) => {
@@ -287,7 +290,7 @@ export const disbandParty = onCall(async (request) => {
     currentState: {
       status: "disbanded",
       currentWaypointIndex: 0,
-      completedAt: Timestamp.now(),
+      completedAt: Date.now(),
     },
     pendingChanges: [],
     stats: {
@@ -306,7 +309,7 @@ async function generateInvites(
   length: number = 6,
 ): Promise<{ inviteCode: string; qrCode: string }> {
   const generateSecureCode = (len: number): string => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let result = "";
     const bytes = randomBytes(len);
 
@@ -316,7 +319,7 @@ async function generateInvites(
     return result;
   };
 
-  const timestamp = Timestamp.now().seconds.toString(36).toUpperCase();
+  const timestamp = Math.floor(Date.now() / 1000).toString(36).toUpperCase();
   const random = generateSecureCode(3);
   const inviteCode = (timestamp + random).substring(0, length);
 
