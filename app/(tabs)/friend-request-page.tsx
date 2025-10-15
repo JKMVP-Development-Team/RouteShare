@@ -9,7 +9,7 @@ import { acceptFriendRequest, getUserByEmail, getUserByName, rejectFriendRequest
 import { onFriendRequestsChange } from '@/services/user';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface FriendRequest {
   id: string;
@@ -26,11 +26,11 @@ export default function FriendRequestsScreen() {
   const router = useRouter();
 
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [searching, setSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Listen for real-time friend request changes
@@ -49,7 +49,6 @@ export default function FriendRequestsScreen() {
       }));
       
       setFriendRequests(formattedRequests);
-      setLoading(false);
     });
 
     // Cleanup subscription on unmount
@@ -67,6 +66,14 @@ export default function FriendRequestsScreen() {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setShowSearchResults(false);
+      setSearchError(null);
+      return;
+    }
+
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      setSearchError(null);
       return;
     }
 
@@ -119,11 +126,20 @@ export default function FriendRequestsScreen() {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setShowSearchResults(false);
+      setSearchError(null);
+      return;
+    }
+
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      setSearchError('Keep typing to search for friends');
       return;
     }
 
     setSearching(true);
     setShowSearchResults(true);
+    setSearchError(null);
 
     try {
       let results: UserProfile[] = [];
@@ -143,10 +159,11 @@ export default function FriendRequestsScreen() {
       }
       
       setSearchResults(results);
+      setSearchError(results.length === 0 ? 'No users found' : null);
     } catch (error: any) {
       console.error('Error searching users:', error);
-      Alert.alert('Error', error.message || 'Failed to search users');
       setSearchResults([]);
+      setSearchError(error.message || 'Something went wrong while searching');
     } finally {
       setSearching(false);
     }
@@ -158,6 +175,7 @@ export default function FriendRequestsScreen() {
       Alert.alert('Success', `Friend request sent to ${userName}!`);
       // Remove from search results after sending request
       setSearchResults(prev => prev.filter(user => user.uid !== userId));
+      setSearchError(null);
     } catch (error: any) {
       console.error('Error sending friend request:', error);
       Alert.alert('Error', error.message || 'Failed to send friend request');
@@ -168,6 +186,7 @@ export default function FriendRequestsScreen() {
     setSearchQuery('');
     setSearchResults([]);
     setShowSearchResults(false);
+    setSearchError(null);
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
@@ -255,42 +274,66 @@ export default function FriendRequestsScreen() {
     </View>
   );
 
-  const ListHeader = () => (
-    <View style={styles.header}>
-      <ThemedText type="title" style={styles.title}>
-        Friend Requests
+  const EmptyState = () => (
+    <View style={styles.emptyState}>
+      <IconSymbol name="person.2.slash" size={64} color={colors.icon} />
+      <ThemedText type="subtitle" style={styles.emptyStateTitle}>
+        No Pending Requests
       </ThemedText>
-      
+      <ThemedText style={styles.emptyStateText}>
+        When someone sends you a friend request, it will appear here.
+      </ThemedText>
+    </View>
+  );
+
+  return (
+    <ThemedView style={styles.container}>
+      <Stack.Screen 
+        options={{ 
+          title: 'Friend Requests',
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ padding: 8 }}>
+              <IconSymbol name="chevron.left" size={24} color={colors.tint} />
+            </TouchableOpacity>
+          ),
+        }} 
+      />
+
       {/* Search Bar */}
-      <View style={[styles.searchContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <IconSymbol name="magnifyingglass" size={20} color={colors.icon} />
-        <TextInput
-          style={[styles.searchInput, { color: colors.text }]}
-          placeholder="Search by name or email..."
-          placeholderTextColor={colors.icon}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          onSubmitEditing={handleSearch}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-            <IconSymbol name="xmark.circle.fill" size={20} color={colors.icon} />
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity 
-          style={[styles.searchButton, { backgroundColor: colors.tint }]}
-          onPress={handleSearch}
-          disabled={searching || !searchQuery.trim()}
-        >
-          {searching ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <IconSymbol name="magnifyingglass" size={16} color="white" />
+      <View style={styles.header}>
+        <ThemedText type="title" style={styles.title}>
+          Friend Requests
+        </ThemedText>
+        <View style={[styles.searchContainer, { backgroundColor: colors.background, borderColor: colors.border }]}> 
+          <IconSymbol name="magnifyingglass" size={20} color={colors.icon} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="Search by name or email..."
+            placeholderTextColor={colors.icon}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={handleSearch}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+              <IconSymbol name="xmark.circle.fill" size={20} color={colors.icon} />
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.searchButton, { backgroundColor: colors.tint }]}
+            onPress={handleSearch}
+            disabled={searching || !searchQuery.trim()}
+          >
+            {searching ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <IconSymbol name="magnifyingglass" size={16} color="white" />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search Results Section */}
@@ -303,6 +346,13 @@ export default function FriendRequestsScreen() {
             <View style={styles.searchingContainer}>
               <ActivityIndicator size="large" color={colors.tint} />
               <ThemedText style={styles.searchingText}>Searching...</ThemedText>
+            </View>
+          ) : searchError ? (
+            <View style={styles.noResultsContainer}>
+              <IconSymbol name="exclamationmark.triangle" size={48} color={colors.icon} />
+              <ThemedText style={styles.noResultsText}>
+                {searchError}
+              </ThemedText>
             </View>
           ) : searchResults.length > 0 ? (
             <FlatList
@@ -331,7 +381,6 @@ export default function FriendRequestsScreen() {
         <ThemedText style={styles.subtitle}>
           {friendRequests.length} pending request{friendRequests.length !== 1 ? 's' : ''}
         </ThemedText>
-        
         {friendRequests.length > 0 && (
           <TouchableOpacity 
             style={[styles.acceptAllButton, { backgroundColor: colors.tint }]}
@@ -342,53 +391,19 @@ export default function FriendRequestsScreen() {
           </TouchableOpacity>
         )}
       </View>
-    </View>
-  );
 
-  const EmptyState = () => (
-    <View style={styles.emptyState}>
-      <IconSymbol name="person.2.slash" size={64} color={colors.icon} />
-      <ThemedText type="subtitle" style={styles.emptyStateTitle}>
-        No Pending Requests
-      </ThemedText>
-      <ThemedText style={styles.emptyStateText}>
-        When someone sends you a friend request, it will appear here.
-      </ThemedText>
-    </View>
-  );
-
-  return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
-      keyboardVerticalOffset={90}
-      enabled={true}
-    >
-      <ThemedView style={styles.container}>
-        <Stack.Screen 
-          options={{ 
-            title: 'Friend Requests',
-            headerLeft: () => (
-              <TouchableOpacity onPress={() => router.back()} style={{ padding: 8 }}>
-                <IconSymbol name="chevron.left" size={24} color={colors.tint} />
-              </TouchableOpacity>
-            ),
-          }} 
-        />
-        
-        <FlatList
-          data={friendRequests}
-          renderItem={renderFriendRequest}
-          keyExtractor={(item) => item.id}
-          ListHeaderComponent={ListHeader}
-          ListEmptyComponent={EmptyState}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="none"
-        />
-      </ThemedView>
-    </KeyboardAvoidingView>
+      {/* Friend Requests List */}
+      <FlatList
+        data={friendRequests}
+        renderItem={renderFriendRequest}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={EmptyState}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="on-drag"
+      />
+    </ThemedView>
   );
 }
 

@@ -55,38 +55,7 @@ export default function SignInScreen() {
     }
   };
 
-  // For quick testing with emulator
-  const handleQuickTest = async () => {
-    console.log("🧪 Quick test sign in...");
-    setEmail('test@example.com');
-    setPassword('password123');
-    
-    setLoading(true);
-    try {
-      // Try to sign in first, if fails then sign up
-      try {
-        console.log("🔐 Trying to sign in as test user...");
-        await signIn('test@example.com', 'password123');
-        console.log("✅ Test user sign in successful");
-        Alert.alert('Success', 'Signed in as test user!');
-      } catch (signInError: any) {
-        console.log("⚠️ Sign in failed, attempting sign up...");
-        console.log("Sign in error:", signInError.code);
-        await signUp('test@example.com', 'password123');
-        console.log("✅ Test user created and signed in");
-        Alert.alert('Success', 'Created test user and signed in!');
-      }
-      router.replace('/(tabs)');
-    } catch (error: any) {
-      console.error("❌ Quick test error:", error);
-      console.error("Error code:", error.code);
-      console.error("Error message:", error.message);
-      Alert.alert('Error', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+ 
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -158,19 +127,6 @@ export default function SignInScreen() {
               {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
             </ThemedText>
           </TouchableOpacity>
-
-          {/* Quick test button for development */}
-          {__DEV__ && (
-            <TouchableOpacity
-              style={[styles.testButton]}
-              onPress={handleQuickTest}
-              disabled={loading}
-            >
-              <ThemedText style={styles.testButtonText}>
-                🧪 Quick Test Sign In
-              </ThemedText>
-            </TouchableOpacity>
-          )}
 
           {/* Show current auth state */}
           {auth.currentUser && (
