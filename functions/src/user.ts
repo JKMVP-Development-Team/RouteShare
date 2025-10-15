@@ -17,6 +17,7 @@ export const sendFriendRequest = onCall(async (request) => {
   }
 
   const {receiverId} = request.data;
+  console.log("Receiver ID:", receiverId);
 
   if (!receiverId) {
     throw new HttpsError("invalid-argument", "Receiver ID is required.");
@@ -44,11 +45,29 @@ export const sendFriendRequest = onCall(async (request) => {
       throw new HttpsError("already-exists", "Friend request already sent");
     }
 
+    const receiverUpdatedReceivedFriendRequests = [...receivedRequests, senderId];
+    if (receiverUpdatedReceivedFriendRequests.length > 100) {
+      throw new HttpsError("resource-exhausted", "Receiver has too many pending friend requests.");
+    }
+    
+    const senderUpdatedSentFriendRequests = [...( (await senderRef.get()).data()?.sentFriendRequests || [] ), receiverId];
+    if (senderUpdatedSentFriendRequests.length > 100) {
+      throw new HttpsError("resource-exhausted", "You have too many pending sent friend requests.");
+    }
+
+    // Check if they are already friends
+    const senderData = (await senderRef.get()).data();
+    const senderFriends = senderData?.friends || [];
+    if (senderFriends.includes(receiverId)) {
+      throw new HttpsError("already-exists", "You are already friends with this user.");
+    }
+
     batch.update(senderRef, {
-      sentFriendRequests: admin.firestore.FieldValue.arrayUnion(receiverId),
+      sentFriendRequests: senderUpdatedSentFriendRequests,
     });
+
     batch.update(receiverRef, {
-      receivedFriendRequests: admin.firestore.FieldValue.arrayUnion(senderId),
+      receivedFriendRequests: receiverUpdatedReceivedFriendRequests,
     });
 
     await batch.commit();
@@ -102,15 +121,28 @@ export const acceptFriendRequest = onCall(async (request) => {
     const accepterRef = db.collection("users").doc(accepterId);
     const senderRef = db.collection("users").doc(senderId);
 
+    const accepterFriends = [...(accepterData?.friends || []), senderId];
+    const accepterUpdatedReceivedFriendRequests = receivedRequests.filter((id: string) => id !== senderId);
+    if (accepterFriends.length > 500) {
+      throw new HttpsError("resource-exhausted", "You have too many friends.");
+    }
+
+    const senderFriends = [...((await senderRef.get()).data()?.friends || []), accepterId];
+    const senderUpdatedSentFriendRequests = [...((await senderRef.get()).data()?.sentFriendRequests).filter((id: string) => id !== accepterId)];
+    if (senderFriends.length > 500) {
+      throw new HttpsError("resource-exhausted", "The other user has too many friends.");
+    }
+
+
     // Add to both users' friend lists
     batch.update(accepterRef, {
-      friends: admin.firestore.FieldValue.arrayUnion(senderId),
-      receivedFriendRequests: admin.firestore.FieldValue.arrayRemove(senderId),
+      friends: accepterFriends,
+      receivedFriendRequests: accepterUpdatedReceivedFriendRequests,
     });
 
     batch.update(senderRef, {
-      friends: admin.firestore.FieldValue.arrayUnion(accepterId),
-      sentFriendRequests: admin.firestore.FieldValue.arrayRemove(accepterId),
+      friends: senderFriends,
+      sentFriendRequests: senderUpdatedSentFriendRequests,
     });
 
     await batch.commit();
@@ -143,13 +175,16 @@ export const rejectFriendRequest = onCall(async (request) => {
     const rejecterRef = db.collection("users").doc(rejecterId);
     const senderRef = db.collection("users").doc(senderId);
 
+    const rejecterUpdatedReceivedFriendRequests = (await rejecterRef.get()).data()?.receivedFriendRequests.filter((id: string) => id !== senderId);
+    const senderUpdatedSentFriendRequests = (await senderRef.get()).data()?.sentFriendRequests.filter((id: string) => id !== rejecterId);
+    
     // Remove from both users' request lists
     batch.update(rejecterRef, {
-      receivedFriendRequests: admin.firestore.FieldValue.arrayRemove(senderId),
+      receivedFriendRequests: rejecterUpdatedReceivedFriendRequests,
     });
 
     batch.update(senderRef, {
-      sentFriendRequests: admin.firestore.FieldValue.arrayRemove(rejecterId),
+      sentFriendRequests: senderUpdatedSentFriendRequests,
     });
 
     await batch.commit();

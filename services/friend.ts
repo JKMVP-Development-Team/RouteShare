@@ -12,7 +12,9 @@ const getUserByEmailFn = httpsCallable(functions, 'getUserByEmail');
 
 export const sendFriendRequest = async (receiverId: string) => {
   try {
+    console.log('Sending friend request to:', receiverId);
     const result = await sendFriendRequestFn({ receiverId });
+    console.log('Send friend request result:', result.data);
     return result.data;
   } catch (error: any) {
     console.error('Send friend request error:', error);
@@ -20,9 +22,11 @@ export const sendFriendRequest = async (receiverId: string) => {
   }
 };
 
-export const acceptFriendRequest = async (requestId: string) => {
+export const acceptFriendRequest = async (senderId: string) => {
   try {
-    const result = await acceptFriendRequestFn({ requestId });
+    console.log('Accepting friend request from:', senderId);
+    const result = await acceptFriendRequestFn({ senderId });
+    console.log('Accept friend request result:', result.data);
     return result.data;
   } catch (error: any) {
     console.error('Accept friend request error:', error);
@@ -30,9 +34,11 @@ export const acceptFriendRequest = async (requestId: string) => {
   }
 };
 
-export const rejectFriendRequest = async (requestId: string) => {
+export const rejectFriendRequest = async (senderId: string) => {
   try {
-    const result = await rejectFriendRequestFn({ requestId });
+    console.log('Rejecting friend request from:', senderId);
+    const result = await rejectFriendRequestFn({ senderId });
+    console.log('Reject friend request result:', result.data);
     return result.data;
   } catch (error: any) {
     console.error('Reject friend request error:', error);
