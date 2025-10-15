@@ -4,11 +4,12 @@ import { signIn, signUp } from '@/services/auth';
 import { auth } from '@/services/firebase';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
@@ -23,11 +24,16 @@ export default function SignInScreen() {
       return;
     }
 
+    if (isSignUp && !displayName.trim()) {
+      Alert.alert('Error', 'Please enter your display name');
+      return;
+    }
+
     setLoading(true);
     try {
       if (isSignUp) {
         console.log("📝 Attempting sign up...");
-        await signUp(email, password);
+        await signUp(email, password, displayName.trim());
         console.log("✅ Sign up successful");
         Alert.alert('Success', 'Account created successfully!');
       } else {
@@ -82,80 +88,111 @@ export default function SignInScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>
-        {isSignUp ? 'Create Account' : 'Sign In'}
-      </ThemedText>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        editable={!loading}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        editable={!loading}
-      />
-
-      <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={handleAuth}
-        disabled={loading}
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.keyboardView}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
-        {loading ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <ThemedText style={styles.buttonText}>
-            {isSignUp ? 'Sign Up' : 'Sign In'}
+        <ThemedView style={styles.container}>
+          <ThemedText type="title" style={styles.title}>
+            {isSignUp ? 'Create Account' : 'Sign In'}
           </ThemedText>
-        )}
-      </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.switchButton}
-        onPress={() => setIsSignUp(!isSignUp)}
-        disabled={loading}
-      >
-        <ThemedText style={styles.switchText}>
-          {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-        </ThemedText>
-      </TouchableOpacity>
+          {isSignUp && (
+            <TextInput
+              style={styles.input}
+              placeholder="Display Name"
+              value={displayName}
+              onChangeText={setDisplayName}
+              autoCapitalize="words"
+              editable={!loading}
+              returnKeyType="next"
+            />
+          )}
 
-      {/* Quick test button for development */}
-      {__DEV__ && (
-        <TouchableOpacity
-          style={[styles.testButton]}
-          onPress={handleQuickTest}
-          disabled={loading}
-        >
-          <ThemedText style={styles.testButtonText}>
-            🧪 Quick Test Sign In
-          </ThemedText>
-        </TouchableOpacity>
-      )}
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            editable={!loading}
+            returnKeyType="next"
+          />
 
-      {/* Show current auth state */}
-      {auth.currentUser && (
-        <View style={styles.authStatus}>
-          <ThemedText style={styles.authStatusText}>
-            ✓ Signed in as: {auth.currentUser.email}
-          </ThemedText>
-        </View>
-      )}
-    </ThemedView>
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            editable={!loading}
+            returnKeyType="done"
+            onSubmitEditing={handleAuth}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleAuth}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <ThemedText style={styles.buttonText}>
+                {isSignUp ? 'Sign Up' : 'Sign In'}
+              </ThemedText>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.switchButton}
+            onPress={() => setIsSignUp(!isSignUp)}
+            disabled={loading}
+          >
+            <ThemedText style={styles.switchText}>
+              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Quick test button for development */}
+          {__DEV__ && (
+            <TouchableOpacity
+              style={[styles.testButton]}
+              onPress={handleQuickTest}
+              disabled={loading}
+            >
+              <ThemedText style={styles.testButtonText}>
+                🧪 Quick Test Sign In
+              </ThemedText>
+            </TouchableOpacity>
+          )}
+
+          {/* Show current auth state */}
+          {auth.currentUser && (
+            <View style={styles.authStatus}>
+              <ThemedText style={styles.authStatusText}>
+                ✓ Signed in as: {auth.currentUser.email}
+              </ThemedText>
+            </View>
+          )}
+        </ThemedView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     padding: 20,

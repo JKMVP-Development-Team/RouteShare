@@ -114,8 +114,13 @@ export interface CreatePartyResponse {
 }
 
 export interface JoinPartyParams {
-  partyId: string;
   inviteCode: string;
+}
+
+export interface JoinPartyResponse {
+  success: boolean;
+  partyId: string;
+  partyName: string;
 }
 
 export interface PartyMember {

@@ -1,9 +1,8 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { auth, db } from '@/services/firebase';
+import { auth } from '@/services/firebase';
 import { joinParty } from '@/services/party';
 import { useRouter } from 'expo-router';
-import { collection, getDocs, query, where } from 'firebase/firestore';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 
@@ -32,26 +31,12 @@ export default function InputCodePage() {
 
     setLoading(true);
     try {
-      // First, find the party with this invite code
-      const partiesRef = collection(db, 'parties');
-      const q = query(partiesRef, where('inviteCode', '==', code));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        Alert.alert('Error', 'Invalid invite code. Please check and try again.');
-        return;
-      }
-
-      const partyDoc = querySnapshot.docs[0];
-      const partyId = partyDoc.id;
-
-      // Now join the party
-      await joinParty({
-        partyId: partyId,
+      // Backend handles finding the party by invite code
+      const result = await joinParty({
         inviteCode: code,
       });
 
-      Alert.alert('Success!', 'You have joined the party!', [
+      Alert.alert('Success!', `You have joined "${result.partyName}"!`, [
         { 
           text: 'OK', 
           onPress: () => {

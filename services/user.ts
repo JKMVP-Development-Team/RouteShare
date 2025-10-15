@@ -9,9 +9,9 @@ export const onFriendRequestsChange = (callback: (requests: any[]) => void) => {
     
     const userRef = doc(db, 'users', user.uid);
     
-    return onSnapshot(userRef, async (doc: any) => {
-        if (doc.exists()) {
-            const data = doc.data();
+    return onSnapshot(userRef, async (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
             const receivedRequests = data.receivedFriendRequests || [];
             
             // Get profiles for the requests
@@ -36,7 +36,7 @@ export const getUserProfile = async (userId: string) => {
         const data = docSnap.data();
         return {
             ...data,
-            joinedAt: data.joinedAt.toDate ? data.joinedAt.toDate() : data.joinedAt
+            joinedAt: data?.joinedAt?.toDate ? data.joinedAt.toDate() : data?.joinedAt
         };
     }
     return null;

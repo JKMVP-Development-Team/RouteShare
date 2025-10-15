@@ -50,9 +50,9 @@ export const getFriendSuggestions = async () => {
   }
 };
 
-export const getUserByName = async (username: string) => {
+export const getUserByName = async (displayName: string) => {
   try {
-    const result = await getUserByNameFn({ username });
+    const result = await getUserByNameFn({ displayName });
     return result.data;
   } catch (error: any) {
     console.error('Get user by name error:', error);

@@ -292,15 +292,31 @@ export const getUserByName = onCall(async (request) => {
 
   try {
     const db = admin.firestore();
+    const searchTerm = displayName.toLowerCase().trim();
+    
+    // Calculate the end range for prefix search (similar to Swift's queryStarting)
+    // For "john", this searches "john" to "john\uf8ff" (matches "john", "johnny", "johnson", etc.)
+    const endTerm = searchTerm + '\uf8ff';
+    
+    // Query Firestore with efficient range query
     const usersSnapshot = await db.collection("users")
-      .where("displayName", "==", displayName)
-      .limit(10)
+      .where("displayNameLower", ">=", searchTerm)
+      .where("displayNameLower", "<=", endTerm)
+      .limit(20)
       .get();
 
-    const users = usersSnapshot.docs.map(doc => ({
-      userId: doc.id,
-      ...doc.data(),
-    }));
+    const users = usersSnapshot.docs
+      .filter(doc => doc.id !== userId) // Exclude current user
+      .map(doc => {
+        const data = doc.data();
+        return {
+          uid: doc.id,
+          email: data.email || "",
+          displayName: data.displayName || "",
+          photoURL: data.photoURL || null,
+        };
+      })
+      .slice(0, 10); // Return top 10 matches
 
     return { users };
   } catch (error) {
@@ -311,33 +327,45 @@ export const getUserByName = onCall(async (request) => {
 
 
 export const getUserByEmail = onCall(async (request) => {
-    const userId = request.auth?.uid;
+  const userId = request.auth?.uid;
   if (!userId) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
 
   const { email } = request.data;
   if (!email) {
-    throw new HttpsError("invalid-argument", "Display name is required");
+    throw new HttpsError("invalid-argument", "Email is required");
   }
-
 
   try {
     const db = admin.firestore();
+    const searchEmail = email.toLowerCase().trim();
+    
+    // Query Firestore by email
     const usersSnapshot = await db.collection("users")
-      .where("email", "==", email)
+      .where("emailLower", "==", searchEmail)
       .limit(1)
       .get();
-
-    const users = usersSnapshot.docs.map(doc => ({
-      userId: doc.id,
-      ...doc.data(),
-    }));
+    
+    if (usersSnapshot.empty) {
+      return { users: [] };
+    }
+    
+    const users = usersSnapshot.docs
+      .filter(doc => doc.id !== userId) // Exclude current user
+      .map(doc => {
+        const data = doc.data();
+        return {
+          uid: doc.id,
+          email: data.email || "",
+          displayName: data.displayName || "",
+          photoURL: data.photoURL || null,
+        };
+      });
 
     return { users };
-  }
-  catch (error) {
+  } catch (error: any) {
     console.error("Get user by email error:", error);
-    throw new HttpsError("internal", "Failed to get users by email");
+    throw new HttpsError("internal", "Failed to get user by email");
   }
 });

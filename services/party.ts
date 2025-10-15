@@ -1,10 +1,10 @@
-import { httpsCallable } from "firebase/functions";
-import { functions } from "./firebase";
+import { httpsCallable } from 'firebase/functions';
+import { functions } from './firebase';
 
-import { CreatePartyParams, CreatePartyResponse, JoinPartyParams, PartyMember } from "../constants/party";
+import { CreatePartyParams, CreatePartyResponse, JoinPartyParams, JoinPartyResponse, PartyMember } from "../constants/party";
 
 const createPartyFn = httpsCallable<CreatePartyParams, CreatePartyResponse>(functions, 'createParty');
-const joinPartyFn = httpsCallable<JoinPartyParams, { success: boolean }>(functions, 'joinParty');
+const joinPartyFn = httpsCallable<JoinPartyParams, JoinPartyResponse>(functions, 'joinParty');
 const getPartyDetailsFn = httpsCallable(functions, 'getPartyDetails');
 const getMembersFn = httpsCallable(functions, 'getMembers');
 const leavePartyFn = httpsCallable(functions, 'leaveParty');
@@ -20,7 +20,7 @@ export const createParty = async (params: CreatePartyParams): Promise<CreatePart
   }
 };
 
-export const joinParty = async (params: JoinPartyParams): Promise<{ success: boolean }> => {
+export const joinParty = async (params: JoinPartyParams): Promise<JoinPartyResponse> => {
   try {
     const result = await joinPartyFn(params);
     return result.data;

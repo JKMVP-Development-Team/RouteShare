@@ -150,43 +150,47 @@ export const joinParty = onCall(async (request) => {
     );
   }
 
-  const { partyId, inviteCode } = request.data;
+  const { inviteCode } = request.data;
 
-  if (!partyId) {
-    throw new HttpsError("invalid-argument", "Party ID is required.");
+  if (!inviteCode) {
+    throw new HttpsError("invalid-argument", "Invite code is required.");
   }
 
-  const partyRef = db.collection("parties").doc(partyId);
-  const partyDoc = await partyRef.get();
-  if (!partyDoc.exists) {
-    throw new HttpsError("not-found", "Party not found.");
+  // Find the party by invite code
+  const partiesRef = db.collection("parties");
+  const querySnapshot = await partiesRef
+    .where("inviteCode", "==", inviteCode.toUpperCase())
+    .limit(1)
+    .get();
+
+  if (querySnapshot.empty) {
+    throw new HttpsError(
+      "not-found",
+      "Invalid invite code. Please check and try again.",
+    );
   }
+
+  const partyDoc = querySnapshot.docs[0];
+  const partyRef = partyDoc.ref;
+  const partyData = partyDoc.data() as PartyDocument;
 
   // Check if party is still open for joining
-  const partyState = (partyDoc.data() as PartyDocument).currentState;
-  if (partyState.status === "disbanded" || partyState.status === "ended") {
+  if (partyData.currentState.status === "disbanded" || partyData.currentState.status === "ended") {
     throw new HttpsError("failed-precondition", "Party is no longer active.");
   }
 
-  const partyData = partyDoc.data() as PartyDocument;
+  // Check if user is already a member
   const isAlreadyMember = partyData.members.some(
     (member) => member.userId === userId,
   );
   if (isAlreadyMember) {
     throw new HttpsError(
       "failed-precondition",
-      "User is already a member of this party.",
+      "You are already a member of this party.",
     );
   }
 
-  // All parties are private - validate invite code
-  if (!inviteCode || inviteCode !== partyData.inviteCode) {
-    throw new HttpsError(
-      "permission-denied",
-      "Invalid invite code. Please enter the correct code to join this party.",
-    );
-  }
-
+  // Check if party is full
   if (partyData.members.length >= partyData.maxMembers) {
     throw new HttpsError("resource-exhausted", "Party is full.");
   }
@@ -205,7 +209,11 @@ export const joinParty = onCall(async (request) => {
     members: updatedMembers,
   });
 
-  return { success: true };
+  return { 
+    success: true,
+    partyId: partyDoc.id,
+    partyName: partyData.name,
+  };
 });
 
 export const leaveParty = onCall(async (request) => {
