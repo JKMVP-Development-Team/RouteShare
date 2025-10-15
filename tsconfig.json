@@ -12,6 +12,12 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-, "hooks/index.jsx"  ]
+    "expo-env.d.ts",
+    "services/**/*.ts",
+    "hooks/index.jsx"
+  ],
+  "exclude": [
+    "functions/**/*",
+    "node_modules"
+  ]
 }

@@ -3,9 +3,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
+import { UserProfile } from '@/constants/user';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { acceptFriendRequest, rejectFriendRequest } from '@/services/friend';
+import { onFriendRequestsChange } from '@/services/user';
 import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 interface FriendRequest {
@@ -22,50 +25,62 @@ export default function FriendRequestsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
 
-  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      username: '@sarahj',
-      mutualFriends: 4,
-      timeAgo: '2 hours ago',
-    },
-    {
-      id: '2',
-      name: 'Mike Chen',
-      username: '@mikechen',
-      mutualFriends: 8,
-      timeAgo: '1 day ago',
-    },
-    {
-      id: '3',
-      name: 'Emily Davis',
-      username: '@emilyd',
-      mutualFriends: 2,
-      timeAgo: '3 days ago',
-    },
-    {
-      id: '4',
-      name: 'Alex Rodriguez',
-      username: '@alexr',
-      mutualFriends: 0,
-      timeAgo: '1 week ago',
-    },
-  ]);
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleAcceptRequest = (requestId: string) => {
-    setFriendRequests(prev => prev.filter(request => request.id !== requestId));
-    Alert.alert('Request Accepted', 'You are now friends!');
+  // Listen for real-time friend request changes
+  useEffect(() => {
+    const unsubscribe = onFriendRequestsChange((requests: UserProfile[]) => {
+      console.log('Friend requests updated:', requests);
+      
+      // Transform the UserProfile data to your UI format
+      const formattedRequests: FriendRequest[] = requests.map((profile) => ({
+        id: profile.uid,
+        name: profile.displayName || 'Unknown User',
+        username: `@${profile.displayName?.toLowerCase().replace(/\s+/g, '') || 'unknown'}`,
+        mutualFriends: 0, // Calculate mutual friends later if needed
+        timeAgo: 'Recently', // We can add a timestamp field to track this
+        avatar: profile.photoURL,
+      }));
+      
+      setFriendRequests(formattedRequests);
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      await acceptFriendRequest(requestId);
+      Alert.alert('Success', 'Friend request accepted!');
+    } catch (error: any) {
+      console.error('Error accepting friend request:', error);
+      Alert.alert('Error', error.message || 'Failed to accept friend request');
+    }
   };
 
-  const handleDeclineRequest = (requestId: string) => {
-    setFriendRequests(prev => prev.filter(request => request.id !== requestId));
-    Alert.alert('Request Declined', 'Friend request has been declined.');
+  const handleDeclineRequest = async (requestId: string) => {
+    try {
+      await rejectFriendRequest(requestId);
+      Alert.alert('Declined', 'Friend request declined');
+    } catch (error: any) {
+      console.error('Error declining friend request:', error);
+      Alert.alert('Error', error.message || 'Failed to decline friend request');
+    }
   };
 
-  const handleAcceptAll = () => {
-    setFriendRequests([]);
-    Alert.alert('All Requests Accepted', 'All friend requests have been accepted!');
+  const handleAcceptAll = async () => {
+    try {
+      await Promise.all(
+        friendRequests.map(request => acceptFriendRequest(request.id))
+      );
+      Alert.alert('Success', 'All friend requests accepted!');
+    } catch (error: any) {
+      console.error('Error accepting all requests:', error);
+      Alert.alert('Error', error.message || 'Failed to accept all requests');
+    }
   };
 
   const renderFriendRequest = ({ item }: { item: FriendRequest }) => (
