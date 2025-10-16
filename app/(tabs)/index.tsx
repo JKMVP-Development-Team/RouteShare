@@ -9,12 +9,17 @@ import { createParty } from '@/services/party';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, FlatList, Image, Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 interface Person {
   id: string;
   name: string;
   location: string;
   distance: string;
+  coordinate: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export default function HomeScreen() {
@@ -38,11 +43,44 @@ export default function HomeScreen() {
 
 
   const nearbyPeople: Person[] = [
-    { id: '1', name: 'Someone1', location: 'location somewhere', distance: '0.5 mi' },
-    { id: '2', name: 'Someone2', location: 'location somewhere', distance: '0.8 mi' },
-    { id: '3', name: 'Someone3', location: 'location somewhere', distance: '1.2 mi' },
-    { id: '4', name: 'Someone4', location: 'location somewhere', distance: '1.5 mi' },
+    { 
+      id: '1', 
+      name: 'Someone1', 
+      location: 'location somewhere', 
+      distance: '0.5 mi',
+      coordinate: { latitude: 37.78825, longitude: -122.4324 }
+    },
+    { 
+      id: '2', 
+      name: 'Someone2', 
+      location: 'location somewhere', 
+      distance: '0.8 mi',
+      coordinate: { latitude: 37.78925, longitude: -122.4334 }
+    },
+    { 
+      id: '3', 
+      name: 'Someone3', 
+      location: 'location somewhere', 
+      distance: '1.2 mi',
+      coordinate: { latitude: 37.79025, longitude: -122.4344 }
+    },
+    { 
+      id: '4', 
+      name: 'Someone4', 
+      location: 'location somewhere', 
+      distance: '1.5 mi',
+      coordinate: { latitude: 37.78725, longitude: -122.4354 }
+    },
   ];
+
+  const [mapRegion, setMapRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  });
+
+  const [showMap, setShowMap] = useState(true);
 
   // Listen to auth state changes
   useEffect(() => {
@@ -171,15 +209,58 @@ return (
 
       <View style={styles.sectionHeader}>
         <ThemedText type="subtitle">Nearby People</ThemedText>
+        <TouchableOpacity 
+          style={styles.viewToggle}
+          onPress={() => setShowMap(!showMap)}
+        >
+          <IconSymbol 
+            name={showMap ? "list.bullet" : "map"} 
+            size={20} 
+            color={colors.tint} 
+          />
+          <ThemedText style={[styles.viewToggleText, { color: colors.tint }]}>
+            {showMap ? 'List' : 'Map'}
+          </ThemedText>
+        </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={nearbyPeople}
-        renderItem={renderPersonItem}
-        keyExtractor={(item) => item.id}
-        style={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      {showMap ? (
+        <View style={styles.mapContainer}>
+          <MapView
+            provider={PROVIDER_GOOGLE}
+            style={styles.map}
+            initialRegion={mapRegion}
+            showsUserLocation={true}
+            showsMyLocationButton={true}
+            showsCompass={true}
+          >
+            {nearbyPeople.map((person) => (
+              <Marker
+                key={person.id}
+                coordinate={person.coordinate}
+                title={person.name}
+                description={`${person.location} • ${person.distance}`}
+              >
+                <View style={styles.customMarker}>
+                  <View style={styles.markerAvatar}>
+                    <ThemedText style={styles.markerAvatarText}>
+                      {person.name.charAt(0)}
+                    </ThemedText>
+                  </View>
+                </View>
+              </Marker>
+            ))}
+          </MapView>
+        </View>
+      ) : (
+        <FlatList
+          data={nearbyPeople}
+          renderItem={renderPersonItem}
+          keyExtractor={(item) => item.id}
+          style={styles.list}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
 
       {/* Create Party Modal */}
       <Modal
@@ -368,7 +449,55 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+  },
+  viewToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  mapContainer: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+  customMarker: {
+    alignItems: 'center',
+  },
+  markerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  markerAvatarText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   list: {
     flex: 1,
