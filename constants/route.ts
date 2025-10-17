@@ -31,11 +31,31 @@ export interface RouteDocument {
     };
   };
   
-  // Route metadata
-  category: 'walking' | 'driving' | 'cycling' | 'transit';
+  navigationData?: {
+    routePolyline: string; // Encoded polyline from Google Maps
+    estimatedDuration: number; // in seconds
+    estimatedDistance: number; // in meters
+    trafficConditions?: string;
+    lastUpdated: Timestamp;
+    currentStatus: 'planned' | 'active' | 'paused' | 'completed';
+    activeNavigators?: string[]; // User IDs currently navigating
+  };
+
   estimatedTime: number; // minutes
   isPublic: boolean;
   tags: string[];
 
 }
 
+export interface NavigationUpdate {
+  routeId: string;
+  userId: string;
+  currentLocation: {
+    latitude: number;
+    longitude: number;
+  };
+  remainingDistance: number; // meters
+  remainingTime: number; // seconds
+  speed: number; // km/h
+  timestamp: Timestamp;
+}

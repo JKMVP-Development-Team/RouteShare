@@ -1,12 +1,15 @@
+import NavView from '@/components/navigation-preview';
 import { SidePanel } from '@/components/side-panel';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { RouteDocument } from '@/constants/route';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { auth } from '@/services/firebase';
 import { createParty } from '@/services/party';
 import { useRouter } from 'expo-router';
+import { Timestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Alert, FlatList, Image, Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -21,6 +24,33 @@ interface Person {
     longitude: number;
   };
 }
+
+const getDemoRoute = (userId: string): RouteDocument => ({
+  id: "demo-route-id",
+  name: "Demo Route",
+  creatorId: userId,
+  createdAt: Timestamp.now(),
+  updatedAt: Timestamp.now(),
+  waypoints: [
+    {
+      latitude: 37.4220679,
+      longitude: -122.0859545,
+      address: "Googleplex",
+      order: 0,
+      type: 'start'
+    },
+    {
+      latitude: 37.4419,
+      longitude: -122.1430,
+      address: "Stanford University",
+      order: 1,
+      type: 'end'
+    }
+  ],
+  estimatedTime: 30,
+  isPublic: true,
+  tags: ["demo"]
+});
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -175,7 +205,7 @@ export default function HomeScreen() {
     );
   }
 
-return (
+  return (
     <ThemedView style={styles.container}>
       <TouchableOpacity 
         style={styles.menuButton}
@@ -226,31 +256,42 @@ return (
 
       {showMap ? (
         <View style={styles.mapContainer}>
-          <MapView
-            provider={PROVIDER_GOOGLE}
-            style={styles.map}
-            initialRegion={mapRegion}
-            showsUserLocation={true}
-            showsMyLocationButton={true}
-            showsCompass={true}
-          >
-            {nearbyPeople.map((person) => (
-              <Marker
-                key={person.id}
-                coordinate={person.coordinate}
-                title={person.name}
-                description={`${person.location} • ${person.distance}`}
-              >
-                <View style={styles.customMarker}>
-                  <View style={styles.markerAvatar}>
-                    <ThemedText style={styles.markerAvatarText}>
-                      {person.name.charAt(0)}
-                    </ThemedText>
+          {user ? (
+            <NavView
+              route={getDemoRoute(user.uid)}
+              userId={user.uid}
+              onNavigationUpdate={(update) => {
+                console.log('Navigation update:', update);
+              }}
+              style={styles.map}
+            />
+          ) : (
+            <MapView
+              provider={PROVIDER_GOOGLE}
+              style={styles.map}
+              initialRegion={mapRegion}
+              showsUserLocation={true}
+              showsMyLocationButton={true}
+              showsCompass={true}
+            >
+              {nearbyPeople.map((person) => (
+                <Marker
+                  key={person.id}
+                  coordinate={person.coordinate}
+                  title={person.name}
+                  description={`${person.location} • ${person.distance}`}
+                >
+                  <View style={styles.customMarker}>
+                    <View style={styles.markerAvatar}>
+                      <ThemedText style={styles.markerAvatarText}>
+                        {person.name.charAt(0)}
+                      </ThemedText>
+                    </View>
                   </View>
-                </View>
-              </Marker>
-            ))}
-          </MapView>
+                </Marker>
+              ))}
+            </MapView>
+          )}
         </View>
       ) : (
         <FlatList
