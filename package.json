@@ -9,7 +9,19 @@
     "android": "node --env-file=.env ./node_modules/expo/bin/cli start --android",
     "ios": "node --env-file=.env ./node_modules/expo/bin/cli start --ios",
     "web": "node --env-file=.env ./node_modules/expo/bin/cli start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest tests/location.test.ts tests/navigation.test.ts",
+    "test:integration": "jest --config=jest.integration.config.js",
+    "test:auth:integration": "jest --config=jest.integration.config.js tests/auth.integration.test.ts",
+    "test:navigation:integration": "jest --config=jest.integration.config.js tests/navigation.integration.test.ts", 
+    "test:party:integration": "jest --config=jest.integration.config.js tests/party.integration.test.ts",
+    "test:friend:integration": "jest --config=jest.integration.config.js tests/friend.integration.test.ts",
+    "test:location": "jest tests/location.test.ts",
+    "test:navigation": "jest tests/navigation.test.ts",
+    "test:user": "jest tests/user.test.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
