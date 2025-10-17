@@ -69,7 +69,6 @@ jest.mock('firebase/app', () => ({
 
 // Set up environment variables for tests
 process.env.EXPO_PUBLIC_FIREBASE_API_KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY || 'test-api-key';
-process.env.__DEV__ = 'false';
 
 global.console = {
   ...console,

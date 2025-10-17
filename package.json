@@ -15,6 +15,7 @@
     "test:coverage": "jest --coverage",
     "test:unit": "jest tests/location.test.ts tests/navigation.test.ts",
     "test:integration": "jest --config=jest.integration.config.js",
+    "test:integration:coverage": "jest --config=jest.integration.config.js --coverage",
     "test:auth:integration": "jest --config=jest.integration.config.js tests/auth.integration.test.ts",
     "test:navigation:integration": "jest --config=jest.integration.config.js tests/navigation.integration.test.ts", 
     "test:party:integration": "jest --config=jest.integration.config.js tests/party.integration.test.ts",

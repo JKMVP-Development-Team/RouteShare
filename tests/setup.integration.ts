@@ -6,14 +6,14 @@
 // Mock only React Native modules (not Firebase)
 jest.mock('react-native', () => ({
   Platform: {
-    OS: 'web',
+    OS: 'ios',
   },
   Alert: {
     alert: jest.fn(),
   },
 }));
 
-// Mock Expo Location (not needed for integration tests but won't hurt)
+// Mock Expo Location 
 jest.mock('expo-location', () => ({
   requestForegroundPermissionsAsync: jest.fn(),
   getCurrentPositionAsync: jest.fn(),
@@ -24,8 +24,7 @@ jest.mock('expo-location', () => ({
 }));
 
 // Set up environment variables for tests
-process.env.EXPO_PUBLIC_FIREBASE_API_KEY = 'demo-key-for-testing';
-process.env.__DEV__ = 'false';
+process.env.EXPO_PUBLIC_FIREBASE_API_KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY || 'test-api-key';
 
 // Console logging for debugging (optional)
 global.console = {

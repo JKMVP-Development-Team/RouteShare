@@ -9,7 +9,7 @@
  * Run: npm run test:auth:integration
  */
 
-import { doPasswordReset, doSignOut, signIn, signUp } from '../services/auth';
+import { doPasswordChange, doPasswordReset, doSignOut, signIn, signUp } from '../services/auth';
 import { auth } from '../services/firebase';
 import { cleanupAuth, connectToEmulators, generateTestUser } from './test-utils';
 
@@ -130,5 +130,28 @@ describe('AuthService Integration Tests', () => {
       // Firebase Auth might throw 'user-not-found' error for non-existent users
       await expect(doPasswordReset(nonExistentEmail)).rejects.toThrow();
     }, 10000);
+  });
+
+
+  describe('Password Change', () => {
+        it('should change the password for the signed-in user', async () => {
+            const testUser = generateTestUser('changepw');
+
+            // Create and sign in user
+            await signUp(testUser.email, testUser.password, testUser.displayName);
+            const newPassword = 'NewP@ssw0rd!';
+            await expect(doPasswordChange(newPassword)).resolves.toBeUndefined();
+
+            // Sign out and sign in with new password to verify
+            await doSignOut();
+            const userCredential = await signIn(testUser.email, newPassword);
+            expect(userCredential.user).toBeDefined();
+        }
+        , 10000);
+
+        it('should handle password change when no user is signed in', async () => {
+            const newPassword = 'AnotherP@ssw0rd!';
+            await expect(doPasswordChange(newPassword)).rejects.toThrow('No user is currently signed in');
+        }, 10000);
   });
 });
