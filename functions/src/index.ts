@@ -22,10 +22,13 @@ import {
 import { deleteRoute, getUserRoutes } from "./routes";
 import {
     acceptFriendRequest,
+    cancelSentFriendRequest,
     getFriendSuggestions,
+    getFriendsList,
     getUserByEmail,
     getUserByName,
     rejectFriendRequest,
+    removeFriend,
     sendFriendRequest,
 } from "./user";
 
@@ -53,18 +56,21 @@ admin.initializeApp();
 
 export {
     acceptFriendRequest,
+    cancelSentFriendRequest,
     createParty,
     createUser,
     deleteRoute,
     deleteUser,
     disbandParty,
     getFriendSuggestions,
+    getFriendsList,
     getMembers,
     getPartyDetails, getUserByEmail,
     getUserByName, getUserRoutes,
     joinParty,
     leaveParty,
     rejectFriendRequest,
+    removeFriend,
     sendFriendRequest
 };
 

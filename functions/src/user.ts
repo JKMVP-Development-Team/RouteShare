@@ -6,11 +6,18 @@
 import * as admin from "firebase-admin";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 
+type BasicCallableRequest<TData = Record<string, unknown>> = {
+  auth?: {
+    uid?: string;
+  };
+  data: TData;
+};
+
 
 
 
 // Send friend request
-export const sendFriendRequest = onCall(async (request) => {
+export const sendFriendRequest = onCall(async (request: BasicCallableRequest<{ receiverId?: string }>) => {
   const senderId = request.auth?.uid;
   if (!senderId) {
     throw new HttpsError("unauthenticated", "User must be authenticated to send a friend request.");
@@ -89,7 +96,7 @@ export const sendFriendRequest = onCall(async (request) => {
   }
 });
 
-export const acceptFriendRequest = onCall(async (request) => {
+export const acceptFriendRequest = onCall(async (request: BasicCallableRequest<{ senderId?: string }>) => {
   const accepterId = request.auth?.uid;
   if (!accepterId) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
@@ -157,7 +164,7 @@ export const acceptFriendRequest = onCall(async (request) => {
   }
 });
 
-export const rejectFriendRequest = onCall(async (request) => {
+export const rejectFriendRequest = onCall(async (request: BasicCallableRequest<{ senderId?: string }>) => {
   const rejecterId = request.auth?.uid;
   if (!rejecterId) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
@@ -196,7 +203,172 @@ export const rejectFriendRequest = onCall(async (request) => {
   }
 });
 
-export const getFriendSuggestions = onCall(async (request) => {
+export const cancelSentFriendRequest = onCall(async (request: BasicCallableRequest<{ receiverId?: string }>) => {
+  const senderId = request.auth?.uid;
+  if (!senderId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  const { receiverId } = request.data;
+  if (!receiverId) {
+    throw new HttpsError("invalid-argument", "Receiver ID is required");
+  }
+
+  try {
+    const db = admin.firestore();
+    const senderRef = db.collection("users").doc(senderId);
+    const receiverRef = db.collection("users").doc(receiverId);
+
+    const [senderDoc, receiverDoc] = await Promise.all([senderRef.get(), receiverRef.get()]);
+
+    if (!senderDoc.exists) {
+      throw new HttpsError("not-found", "Sender user not found");
+    }
+
+    if (!receiverDoc.exists) {
+      throw new HttpsError("not-found", "Receiver user not found");
+    }
+
+    const senderData = senderDoc.data();
+    const receiverData = receiverDoc.data();
+
+    const sentRequests: string[] = senderData?.sentFriendRequests || [];
+    if (!sentRequests.includes(receiverId)) {
+      throw new HttpsError("not-found", "Friend request not found");
+    }
+
+    const receiverRequests: string[] = receiverData?.receivedFriendRequests || [];
+    if (!receiverRequests.includes(senderId)) {
+      throw new HttpsError("not-found", "Friend request not found");
+    }
+
+    const batch = db.batch();
+    batch.update(senderRef, {
+      sentFriendRequests: admin.firestore.FieldValue.arrayRemove(receiverId),
+    });
+    batch.update(receiverRef, {
+      receivedFriendRequests: admin.firestore.FieldValue.arrayRemove(senderId),
+    });
+
+    await batch.commit();
+
+    return { success: true, message: "Friend request cancelled" };
+  } catch (error) {
+    console.error("Cancel sent friend request error:", error);
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    throw new HttpsError("internal", "Failed to cancel friend request");
+  }
+});
+
+export const removeFriend = onCall(async (request: BasicCallableRequest<{ friendId?: string }>) => {
+  const userId = request.auth?.uid;
+  if (!userId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  const { friendId } = request.data;
+  if (!friendId) {
+    throw new HttpsError("invalid-argument", "Friend ID is required");
+  }
+
+  try {
+    const db = admin.firestore();
+    const userRef = db.collection("users").doc(userId);
+    const friendRef = db.collection("users").doc(friendId);
+
+    const [userDoc, friendDoc] = await Promise.all([userRef.get(), friendRef.get()]);
+
+    if (!userDoc.exists) {
+      throw new HttpsError("not-found", "User not found");
+    }
+
+    if (!friendDoc.exists) {
+      throw new HttpsError("not-found", "Friend user not found");
+    }
+
+    const userData = userDoc.data();
+    const friendData = friendDoc.data();
+
+    const userFriends: string[] = userData?.friends || [];
+    if (!userFriends.includes(friendId)) {
+      throw new HttpsError("not-found", "Friend not found in your list");
+    }
+
+    const friendFriends: string[] = friendData?.friends || [];
+    if (!friendFriends.includes(userId)) {
+      throw new HttpsError("not-found", "Friend relationship not found on the other user");
+    }
+
+    const batch = db.batch();
+    batch.update(userRef, {
+      friends: admin.firestore.FieldValue.arrayRemove(friendId),
+    });
+    batch.update(friendRef, {
+      friends: admin.firestore.FieldValue.arrayRemove(userId),
+    });
+
+    await batch.commit();
+
+    return { success: true, message: "Friend removed" };
+  } catch (error) {
+    console.error("Remove friend error:", error);
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    throw new HttpsError("internal", "Failed to remove friend");
+  }
+});
+
+export const getFriendsList = onCall(async (request: BasicCallableRequest) => {
+  const userId = request.auth?.uid;
+  if (!userId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  try {
+    const db = admin.firestore();
+    const userDoc = await db.collection("users").doc(userId).get();
+
+    if (!userDoc.exists) {
+      throw new HttpsError("not-found", "User not found");
+    }
+
+    const userData = userDoc.data();
+    const friends: string[] = userData?.friends || [];
+
+    if (friends.length === 0) {
+      return { friends: [] };
+    }
+
+    const friendProfiles = await Promise.all(
+      friends.map(async (friendId: string) => {
+        const friendDoc = await db.collection("users").doc(friendId).get();
+        if (!friendDoc.exists) {
+          return null;
+        }
+
+        const friendData = friendDoc.data();
+        return {
+          userId: friendId,
+          displayName: friendData?.displayName,
+          photoURL: friendData?.photoURL,
+        };
+      }),
+    );
+
+    return { friends: friendProfiles.filter(Boolean) };
+  } catch (error) {
+    console.error("Get friends list error:", error);
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    throw new HttpsError("internal", "Failed to get friends list");
+  }
+});
+
+export const getFriendSuggestions = onCall(async (request: BasicCallableRequest) => {
   const userId = request.auth?.uid;
   if (!userId) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
@@ -273,7 +445,7 @@ export const getFriendSuggestions = onCall(async (request) => {
   }
 });
 
-export const getPendingFriendRequests = onCall(async (request) => {
+export const getPendingFriendRequests = onCall(async (request: BasicCallableRequest) => {
   const userId = request.auth?.uid;
   if (!userId) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
