@@ -67,6 +67,11 @@ export default function HomeScreen() {
         </ThemedText>
       </View>
 
+      {/* Map placeholder */}
+      <View style={styles.mapCard}>
+        <ThemedText type="subtitle">Map Placeholder</ThemedText>
+      </View>
+
       {/* Search Bar */}
       <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
         <IconSymbol name="magnifyingglass" size={20} color={colors.tint} />
@@ -125,6 +130,22 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 32,
     fontWeight: 'bold',
+  },
+  mapCard: {
+    height: 200,
+    borderRadius: 20,
+    backgroundColor: '#d0d0d0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { 
+      width: 0, 
+      height: 2
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   searchContainer: {
     flexDirection: 'row',
