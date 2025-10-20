@@ -5,10 +5,12 @@ import { functions } from './firebase';
 const sendFriendRequestFn = httpsCallable(functions, 'sendFriendRequest');
 const acceptFriendRequestFn = httpsCallable(functions, 'acceptFriendRequest');
 const rejectFriendRequestFn = httpsCallable(functions, 'rejectFriendRequest');
+const cancelFriendRequestFn = httpsCallable(functions, 'cancelFriendRequest');
 const getFriendSuggestionsFn = httpsCallable(functions, 'getFriendSuggestions');
 const getPendingFriendRequestsFn = httpsCallable(functions, 'getPendingFriendRequests');
 const getUserByNameFn = httpsCallable(functions, 'getUserByName');
 const getUserByEmailFn = httpsCallable(functions, 'getUserByEmail');
+const getFriendsListFn = httpsCallable(functions, 'getFriendsList');
 
 export const sendFriendRequest = async (receiverId: string) => {
   try {
@@ -83,5 +85,27 @@ export const getPendingFriendRequests = async () => {
   } catch (error: any) {
     console.error('Get pending friend requests error:', error);
     throw new Error(error.message || 'Failed to get pending friend requests');
+  }
+};
+
+export const cancelFriendRequest = async (receiverId: string) => {
+  try {
+    console.log('Cancelling friend request to:', receiverId);
+    const result = await cancelFriendRequestFn({ receiverId });
+    console.log('Cancel friend request result:', result.data);
+    return result.data;
+  } catch (error: any) {
+    console.error('Cancel friend request error:', error);
+    throw new Error(error.message || 'Failed to cancel friend request');
+  }
+};
+
+export const getFriendsList = async () => {
+  try {
+    const result = await httpsCallable(functions, 'getFriendsList')();
+    return result.data;
+  } catch (error: any) {
+    console.error('Get friends list error:', error);
+    throw new Error(error.message || 'Failed to get friends list');
   }
 };
