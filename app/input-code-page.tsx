@@ -69,7 +69,7 @@ export default function InputCodeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 90,
+    marginTop: 10,
     flex: 1,
     padding: 20,
   },

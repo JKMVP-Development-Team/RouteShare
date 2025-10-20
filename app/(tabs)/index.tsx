@@ -6,7 +6,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useState } from 'react';
-import { FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface Person {
   id: string;
@@ -28,74 +28,77 @@ export default function HomeScreen() {
     { id: '4', name: 'Someone4', location: 'location somewhere', distance: '1.5 mi' },
   ];
 
-  const renderPersonItem = ({ item }: { item: Person }) => (
-    <TouchableOpacity style={styles.personItem}>
-      <View style={styles.personAvatar}>
-        <ThemedText style={styles.avatarText}>
-          {item.name.charAt(0)}
-        </ThemedText>
-      </View>
-      <View style={styles.personInfo}>
-        <ThemedText type="defaultSemiBold" style={styles.personName}>
-          {item.name}
-        </ThemedText>
-        <ThemedText style={styles.personLocation}>
-          {item.location}
-        </ThemedText>
-      </View>
-      <ThemedText style={styles.distance}>
-        {item.distance}
-      </ThemedText>
-    </TouchableOpacity>
-  );
-
   return (
     <ThemedView style={styles.container}>
-      {/* Hamburger Menu Button */}
+      {/* Hamburger Menu Button - Outside ScrollView to stay fixed */}
       <TouchableOpacity 
-        style={styles.menuButton}
+        style={[
+          styles.menuButton,
+          { backgroundColor: colors.background } // Use theme background
+        ]}
         onPress={() => setIsSidePanelVisible(true)}
       >
         <IconSymbol name="line.3.horizontal" size={24} color={colors.text} />
       </TouchableOpacity>
 
-      {/* Header with Location - Moved Lower */}
-      <View style={styles.header}>
-        <ThemedText style={styles.locationLabel}>123 Anywhere St, Any City</ThemedText>
-        <ThemedText type="title" style={styles.headerTitle}>
-          Where to?
-        </ThemedText>
-      </View>
-
-      {/* Map placeholder */}
-      <View style={styles.mapCard}>
-        <ThemedText type="subtitle">Map Placeholder</ThemedText>
-      </View>
-
-      {/* Search Bar */}
-      <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
-        <IconSymbol name="magnifyingglass" size={20} color={colors.tint} />
-        <TextInput
-          style={[styles.searchInput, { color: colors.text }]}
-          placeholder="Search for people or places..."
-          placeholderTextColor={colors.secondaryText}
-        />
-      </View>
-
-      {/* Nearby People List */}
-      <View style={styles.sectionHeader}>
-        <ThemedText type="subtitle">Nearby People</ThemedText>
-      </View>
-
-      <FlatList
-        data={nearbyPeople}
-        renderItem={renderPersonItem}
-        keyExtractor={(item) => item.id}
-        style={styles.list}
+      {/* Scrollable Content */}
+      <ScrollView 
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-      />
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Rest of your content remains the same */}
+        <View style={styles.header}>
+          <ThemedText style={styles.locationLabel}>123 Anywhere St, Any City</ThemedText>
+          <ThemedText type="title" style={styles.headerTitle}>
+            Where to?
+          </ThemedText>
+        </View>
 
-      {/* Side Panel */}
+        <View style={styles.mapCard}>
+          <ThemedText type="subtitle">Map Placeholder</ThemedText>
+          <ThemedText style={styles.mapSubtitle}>
+            Interactive map will go here
+          </ThemedText>
+        </View>
+
+        <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
+          <IconSymbol name="magnifyingglass" size={20} color={colors.tint} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="Search for people or places..."
+            placeholderTextColor={colors.secondaryText}
+          />
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <ThemedText type="subtitle">Nearby People</ThemedText>
+        </View>
+
+        {nearbyPeople.map((person) => (
+          <TouchableOpacity key={person.id} style={styles.personItem}>
+            <View style={styles.personAvatar}>
+              <ThemedText style={styles.avatarText}>
+                {person.name.charAt(0)}
+              </ThemedText>
+            </View>
+            <View style={styles.personInfo}>
+              <ThemedText type="defaultSemiBold" style={styles.personName}>
+                {person.name}
+              </ThemedText>
+              <ThemedText style={styles.personLocation}>
+                {person.location}
+              </ThemedText>
+            </View>
+            <ThemedText style={styles.distance}>
+              {person.distance}
+            </ThemedText>
+          </TouchableOpacity>
+        ))}
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
       <SidePanel 
         visible={isSidePanelVisible} 
         onClose={() => setIsSidePanelVisible(false)} 
@@ -107,19 +110,35 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    position: 'relative', // Important for absolute positioning
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: 16,
+    paddingTop: 80, // Add padding to account for fixed menu button
   },
   menuButton: {
     position: 'absolute',
-    top: 60, // Adjust this value to position the hamburger button
-    left: 20,
+    top: 50, // Reduced from 60
+    left: 16, // Reduced from 20 to match padding
     zIndex: 1000,
-    padding: 8,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    borderRadius: 8,
+    padding: 12, // Increased padding for better touch target
+    borderRadius: 12,
+    shadowColor: '#000647ff',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 1)',
   },
   header: {
-    marginTop: 100, // Increased from 16 to push header lower
+    marginTop: 20,
     marginBottom: 24,
   },
   locationLabel: {
@@ -147,6 +166,10 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
+  mapSubtitle: {
+    marginTop: 8,
+    opacity: 0.7,
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -169,9 +192,6 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     marginBottom: 16,
-  },
-  list: {
-    flex: 1,
   },
   personItem: {
     flexDirection: 'row',
@@ -210,5 +230,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#007AFF',
+  },
+  bottomSpacer: {
+    height: 20,
   },
 });

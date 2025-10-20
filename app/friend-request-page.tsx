@@ -184,7 +184,7 @@ export default function FriendRequestsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 90,
+    marginTop: 10,
   },
   listContent: {
     padding: 16,

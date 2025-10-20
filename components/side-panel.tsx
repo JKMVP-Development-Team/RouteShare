@@ -8,7 +8,6 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Modal, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
-
 interface SidePanelProps {
   visible: boolean;
   onClose: () => void;
@@ -25,10 +24,20 @@ export function SidePanel({ visible, onClose, friendRequestsCount }: SidePanelPr
     router.push('/input-code-page');
   };
 
-   const handleFriendRequests = () => {
+  const handleFriendRequests = () => {
     onClose();
     router.push('/friend-request-page');
   }; 
+
+  const handleCalendar = () => {
+    onClose();
+    router.push('/calendar-page');
+  }
+
+  const handleProfile = () => {
+    onClose();
+    router.push('/profile');
+  }
 
   return (
     <Modal
@@ -51,6 +60,24 @@ export function SidePanel({ visible, onClose, friendRequestsCount }: SidePanelPr
                 </TouchableOpacity>
               </View>
 
+              {/* Profile Section */}
+              <TouchableOpacity style={styles.menuItem} onPress={handleProfile}>
+                <View style={styles.menuItemLeft}>
+                  <IconSymbol name="person.circle" size={24} color={colors.tint} />
+                  <ThemedText style={styles.menuItemText}>My Profile</ThemedText>
+                </View>
+                <IconSymbol name="chevron.right" size={18} color={colors.icon} />
+              </TouchableOpacity>
+
+              {/* Calendar Menu Item - */}
+              <TouchableOpacity style={styles.menuItem} onPress={handleCalendar}>
+                <View style={styles.menuItemLeft}>
+                  <IconSymbol name="calendar" size={24} color={colors.tint} />
+                  <ThemedText style={styles.menuItemText}>My Schedule</ThemedText>
+                </View>
+                <IconSymbol name="chevron.right" size={18} color={colors.icon} />
+              </TouchableOpacity>
+
               {/* Input Code Section */}
               <TouchableOpacity style={styles.menuItem} onPress={handleInputCode}>
                 <View style={styles.menuItemLeft}>
@@ -71,7 +98,7 @@ export function SidePanel({ visible, onClose, friendRequestsCount }: SidePanelPr
                 </View>
               </TouchableOpacity>
 
-              {/* Add more menu items as needed */}
+              {/* Settings Menu Item */}
               <TouchableOpacity style={styles.menuItem}>
                 <View style={styles.menuItemLeft}>
                   <IconSymbol name="gear" size={24} color={colors.tint} />
