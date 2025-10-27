@@ -17,7 +17,7 @@
     "test:integration": "jest --config=jest.integration.config.js",
     "test:integration:coverage": "jest --config=jest.integration.config.js --coverage",
     "test:auth:integration": "jest --config=jest.integration.config.js tests/auth.integration.test.ts",
-    "test:navigation:integration": "jest --config=jest.integration.config.js tests/navigation.integration.test.ts", 
+    "test:navigation:integration": "jest --config=jest.integration.config.js tests/navigation.integration.test.ts",
     "test:party:integration": "jest --config=jest.integration.config.js tests/party.integration.test.ts",
     "test:friend:integration": "jest --config=jest.integration.config.js tests/friend.integration.test.ts",
     "test:location": "jest tests/location.test.ts",
@@ -59,10 +59,13 @@
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/qrcode": "^1.5.5",
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.5",
     "typescript": "~5.9.2"
   },
   "private": true
