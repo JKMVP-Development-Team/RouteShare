@@ -12,13 +12,13 @@
 
 import { signIn, signUp } from '../services/auth';
 import {
-    acceptFriendRequest,
-    getFriendSuggestions,
-    getPendingFriendRequests,
-    getUserByEmail,
-    getUserByName,
-    rejectFriendRequest,
-    sendFriendRequest
+  acceptFriendRequest,
+  getFriendSuggestions,
+  getPendingFriendRequests,
+  getUserByEmail,
+  getUserByName,
+  rejectFriendRequest,
+  sendFriendRequest
 } from '../services/friend';
 import { cleanupAuth, connectToEmulators, generateTestUser } from './test-utils';
 

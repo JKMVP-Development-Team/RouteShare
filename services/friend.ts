@@ -102,7 +102,7 @@ export const cancelFriendRequest = async (receiverId: string) => {
 
 export const getFriendsList = async () => {
   try {
-    const result = await httpsCallable(functions, 'getFriendsList')();
+    const result = await getFriendsListFn();
     return result.data;
   } catch (error: any) {
     console.error('Get friends list error:', error);
