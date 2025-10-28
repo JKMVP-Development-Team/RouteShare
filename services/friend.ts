@@ -11,6 +11,7 @@ const getPendingFriendRequestsFn = httpsCallable(functions, 'getPendingFriendReq
 const getUserByNameFn = httpsCallable(functions, 'getUserByName');
 const getUserByEmailFn = httpsCallable(functions, 'getUserByEmail');
 const getFriendsListFn = httpsCallable(functions, 'getFriendsList');
+const removeFriendFn = httpsCallable(functions, 'removeFriend');
 
 export const sendFriendRequest = async (receiverId: string) => {
   try {
@@ -107,5 +108,17 @@ export const getFriendsList = async () => {
   } catch (error: any) {
     console.error('Get friends list error:', error);
     throw new Error(error.message || 'Failed to get friends list');
+  }
+};
+
+export const removeFriend = async (friendId: string) => {
+  try {
+    console.log('Removing friend:', friendId);
+    const result = await removeFriendFn({ friendId });
+    console.log('Remove friend result:', result.data);
+    return result.data;
+  } catch (error: any) {
+    console.error('Remove friend error:', error);
+    throw new Error(error.message || 'Failed to remove friend');
   }
 };

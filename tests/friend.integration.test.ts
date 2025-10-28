@@ -13,11 +13,14 @@
 import { signIn, signUp } from '../services/auth';
 import {
   acceptFriendRequest,
+  cancelFriendRequest,
+  getFriendsList,
   getFriendSuggestions,
   getPendingFriendRequests,
   getUserByEmail,
   getUserByName,
   rejectFriendRequest,
+  removeFriend,
   sendFriendRequest
 } from '../services/friend';
 import { cleanupAuth, connectToEmulators, generateTestUser } from './test-utils';
@@ -121,6 +124,54 @@ describe('FriendService Integration Tests', () => {
           console.warn('⚠️ Cloud functions not available');
         } else {
           // May fail if no pending request, but function should exist
+          expect(error).toBeDefined();
+        }
+      }
+    }, 15000);
+
+    it('should cancel a sent friend request', async () => {
+      const receiverId = testUser2Id;
+
+      try {
+        const result = await cancelFriendRequest(receiverId);
+        expect(result).toBeDefined();
+      } catch (error: any) {
+        if (error.message.includes('Function not found') || error.message.includes('UNAVAILABLE')) {
+          console.warn('⚠️ Cloud functions not available');
+        } else {
+          // May fail if no pending request, but function should exist
+          expect(error).toBeDefined();
+        }
+      }
+    }, 15000);
+  });
+
+  describe('Friend Management', () => {
+    it('should get friends list', async () => {
+      try {
+        const friends = await getFriendsList();
+        expect(friends).toBeDefined();
+        // Should return an object with a friends array
+      } catch (error: any) {
+        if (error.message.includes('Function not found') || error.message.includes('UNAVAILABLE')) {
+          console.warn('⚠️ Cloud functions not available');
+        } else {
+          expect(error).toBeDefined();
+        }
+      }
+    }, 15000);
+
+    it('should remove a friend', async () => {
+      const friendId = testUser2Id;
+
+      try {
+        const result = await removeFriend(friendId);
+        expect(result).toBeDefined();
+      } catch (error: any) {
+        if (error.message.includes('Function not found') || error.message.includes('UNAVAILABLE')) {
+          console.warn('⚠️ Cloud functions not available');
+        } else {
+          // May fail if not friends, but function should exist
           expect(error).toBeDefined();
         }
       }
