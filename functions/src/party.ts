@@ -1,11 +1,35 @@
 import { randomBytes } from "crypto";
 import * as admin from "firebase-admin";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as QRCode from "qrcode";
 import { PartyDocument } from "../../constants/party";
 
 // TODO: Add invite expiration handling
-// TODO: Add party deletion handling
+export const scheduledInviteCleanup = onSchedule(
+  "every 24 hours", async (event) => {
+    console.log("Running scheduled invite cleanup:", event);
+    await removeExpiredInvites();
+  },
+);
+
+async function removeExpiredInvites() {
+  const db = admin.firestore();
+  const now = Date.now();
+  db.collection("inviteCode")
+    .where("expirationDate", "<", now)
+    .get()
+    .then((snapshot) => {
+      const batch = db.batch();
+      snapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      return batch.commit();
+    })
+    .catch((error) => {
+      console.error("Error removing expired invites:", error);
+    });
+}
 
 // Create a new party
 export const createParty = onCall(async (request) => {
