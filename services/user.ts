@@ -1,7 +1,10 @@
-import { UserProfile } from '@/constants/user';
+import { DriverUserProfile, UserProfile } from '@/constants/user';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { httpsCallable } from 'firebase/functions';
+import { auth, db, functions } from './firebase';
+
+const registerDriverFn = httpsCallable(functions, 'registerDriverForm'); 
 
 // Real-time listener for friend requests
 export const onFriendRequestsChange = (callback: (requests: any[]) => void) => {
@@ -92,3 +95,16 @@ export const updateUserProfile = async (updates: Partial<UserProfile>) => {
     await updateDoc(userRef, updates);
 };
 
+// Form from Frontend to register as a driver
+export const registerDriverForm = async (updates: Partial<DriverUserProfile>) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+        const result = await registerDriverFn(updates);
+        return result.data;
+    } catch (error: any) {
+        console.error('Register driver form error:', error);
+        throw new Error(error.message || 'Failed to register driver form');
+    }
+};

@@ -11,6 +11,7 @@ export interface UserProfile {
     photoURL?: string;
     joinedAt: Timestamp;
     lastSeen?: Timestamp;
+    role: 'rider' | 'driver' | 'manager';
 
     currentLocation?: {
         latitude: number;
@@ -45,4 +46,29 @@ export interface UserProfile {
     // Device Info for push notifications
     fcmTokens?: string;
     platform?: 'ios' | 'android';
+}
+
+// Won't need to handle insurance/background check as the manager will handle that already
+export interface DriverUserProfile extends UserProfile {
+    role: 'driver';
+    licenseNumber: string;
+    vehicleInfo: {
+        make: string;
+        model: string;
+        year: number;
+        licensePlate: string;
+        color?: string;
+        vehicleType?: 'suv' | 'sedan' | 'truck' | 'van';
+        vehicleCapacity?: number;
+    };
+}
+
+export interface RiderUserProfile extends UserProfile {
+    role: 'rider';
+    preferredTimes: string[];
+}
+
+export interface ManagerUserProfile extends UserProfile {
+    role: 'manager';
+    driverIds: string[]; // Managed drivers
 }
