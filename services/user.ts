@@ -108,3 +108,16 @@ export const registerDriverForm = async (updates: Partial<DriverUserProfile>) =>
         throw new Error(error.message || 'Failed to register driver form');
     }
 };
+
+export const registerRiderForm = async (updates: Partial<UserProfile>) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+        const result = await registerDriverFn(updates);
+        return result.data;
+    } catch (error: any) {
+        console.error('Register rider form error:', error);
+        throw new Error(error.message || 'Failed to register rider form');
+    }
+};
