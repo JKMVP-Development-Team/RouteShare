@@ -48,13 +48,7 @@ export default function TripsScreen() {
     <ThemedView style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="title">My Trips</ThemedText>
-        <TouchableOpacity 
-          style={[styles.createButton, { backgroundColor: colors.tint }]}
-          onPress={() => router.push({ pathname: '/create-trip' } as any)}
-        >
-          <IconSymbol name="plus" size={20} color="white" />
-          <ThemedText style={styles.createButtonText}>Create Trip</ThemedText>
-        </TouchableOpacity>
+        
       </View>
 
       <ScrollView style={styles.content}>
@@ -62,7 +56,7 @@ export default function TripsScreen() {
         <View style={styles.quickActions}>
           <TouchableOpacity 
             style={[styles.quickAction, { backgroundColor: colors.background }]}
-            onPress={() => router.push({ pathname: '/create-trip' } as any)}
+            onPress={() => router.push({ pathname: '/create-trip-page' })}
           >
             <IconSymbol name="car.fill" size={24} color={colors.tint} />
             <ThemedText style={styles.quickActionText}>Create Trip</ThemedText>

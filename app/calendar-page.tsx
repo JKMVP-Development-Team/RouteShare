@@ -85,7 +85,8 @@ export default function CalendarScreen() {
       
       <View style={styles.header}>
         <ThemedText type="title">My Schedule</ThemedText>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity style={styles.addButton}
+        onPress={() => router.push('/add-schedule')}>
           <IconSymbol name="plus" size={20} color="white" />
           <ThemedText style={styles.addButtonText}>Add</ThemedText>
         </TouchableOpacity>

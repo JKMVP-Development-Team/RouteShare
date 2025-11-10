@@ -39,6 +39,11 @@ export function SidePanel({ visible, onClose, friendRequestsCount }: SidePanelPr
     router.push('/profile');
   }
 
+  const handleSettings = () => {
+  onClose();
+  router.push({ pathname: '/settings' } as any);
+  }
+
   return (
     <Modal
       animationType="fade"
@@ -97,15 +102,16 @@ export function SidePanel({ visible, onClose, friendRequestsCount }: SidePanelPr
                   <ThemedText style={styles.badgeText}>{friendRequestsCount}</ThemedText>
                 </View>
               </TouchableOpacity>
-
-              {/* Settings Menu Item */}
-              <TouchableOpacity style={styles.menuItem}>
+              
+              {/*handleSettings*/}
+              <TouchableOpacity style={styles.menuItem} onPress={handleSettings}>
                 <View style={styles.menuItemLeft}>
                   <IconSymbol name="gear" size={24} color={colors.tint} />
                   <ThemedText style={styles.menuItemText}>Settings</ThemedText>
                 </View>
                 <IconSymbol name="chevron.right" size={18} color={colors.icon} />
-              </TouchableOpacity>
+                </TouchableOpacity>
+              
             </ThemedView>
           </TouchableWithoutFeedback>
         </View>
