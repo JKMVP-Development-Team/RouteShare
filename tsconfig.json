@@ -6,12 +6,19 @@
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "jsx": "react-native"
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "services/**/*.ts",
+    "hooks/index.jsx"
+  ],
+  "exclude": [
+    "functions/**/*",
+    "node_modules"
   ]
 }

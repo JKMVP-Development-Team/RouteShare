@@ -31,13 +31,21 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.env
+*.local
 
 # typescript
 *.tsbuildinfo
+
+# Jest coverage reports
+coverage/
 
 app-example
 
 # generated native folders
 /ios
 /android
+
+.vscode/
+.idea/
+*.log
