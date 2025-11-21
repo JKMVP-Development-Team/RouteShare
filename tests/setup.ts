@@ -63,6 +63,18 @@ jest.mock('firebase/functions', () => ({
   connectFunctionsEmulator: jest.fn(),
 }));
 
+jest.mock('firebase/database', () => ({
+  getDatabase: jest.fn(),
+  child: jest.fn(),
+  get: jest.fn(),
+  ref: jest.fn(),
+  set: jest.fn(),
+  update: jest.fn(),
+  query: jest.fn(),
+  push: jest.fn(),
+  serverTimestamp: jest.fn()
+}));
+
 jest.mock('firebase/app', () => ({
   initializeApp: jest.fn(),
 }));

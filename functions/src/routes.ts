@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 
+// const logger = require("firebase-functions/logger")
 
 
 export const createRoute = onCall(async (request) => {
@@ -28,8 +29,9 @@ export const createRoute = onCall(async (request) => {
 });
 
 export const onRouteCreated = onDocumentCreated("routes/{routeId}", (event) => {
-    console.log("New route created:", event.data?.id);
-    // Update User States
+    console.log("New route created:", event.data?.id);    
+  
+    // Update User States update user states in cleitn side
     // Send Notification to Party members
     // Process route data i.e. use Google maps routing API etc.
 });

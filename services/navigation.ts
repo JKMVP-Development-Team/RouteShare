@@ -1,6 +1,6 @@
-import { addDoc, arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, Timestamp, updateDoc, where } from 'firebase/firestore';
+import { child, get, push, ref, serverTimestamp, set, update } from 'firebase/database';
 import { RouteDocument } from '../constants/route';
-import { db } from './firebase';
+import { rtdb } from './firebase';
 import { LocationCoordinate } from './location';
 
 export interface NavigationUpdate {
@@ -10,16 +10,17 @@ export interface NavigationUpdate {
   remainingDistance: number; // meters
   remainingTime: number; // seconds
   speed: number; // km/h
-  timestamp: Timestamp;
+  timestamp: number;
 }
 
 export interface NavigationSession {
   routeId: string;
   userId: string;
-  startedAt: Timestamp;
+  startedAt: number;
   status: 'active' | 'paused' | 'completed';
   currentLocation?: LocationCoordinate;
 }
+
 
 export class NavigationService {
   
@@ -29,45 +30,39 @@ export class NavigationService {
    * @param userId - The ID of the user
    */
   static async startNavigation(routeId: string, userId: string): Promise<void> {
-    const routeRef = doc(db, 'routes', routeId);
+    const routeRef = ref(rtdb, `routes/${routeId}`);
     
-    await updateDoc(routeRef, {
-      'navigationData.currentStatus': 'active',
-      'navigationData.activeNavigators': arrayUnion(userId),
-      'navigationData.lastUpdated': Timestamp.now()
+    await update(routeRef, {
+      'navigationData/currentStatus': 'active',
+      [`navigationData/activeNavigators/${userId}`]: true,
+      'navigationData/lastUpdated': serverTimestamp()
     });
 
     // Create navigation session
-    const sessionRef = collection(db, 'navigationSessions');
-    await addDoc(sessionRef, {
+    const sessionRef = push(ref(rtdb, 'navigationSessions'));
+    await set(sessionRef, {
       routeId,
       userId,
-      startedAt: Timestamp.now(),
+      startedAt: serverTimestamp(),
       status: 'active'
-    } as NavigationSession);
+    } as Omit<NavigationSession, 'startedAt'> & { startedAt: any});
 
     console.log(`Navigation started for route ${routeId} by user ${userId}`);
   }
 
   /**
    * Update navigation progress with current location and status
-   * @param update - Navigation update data
+   * @param navUpdate - Navigation update data
    */
-  static async updateNavigationProgress(update: NavigationUpdate): Promise<void> {
-    const updatesRef = collection(db, 'navigationUpdates');
-    
-    await addDoc(updatesRef, {
-      ...update,
-      timestamp: Timestamp.now()
-    });
-
+  static async updateNavigationProgress(navUpdate: NavigationUpdate): Promise<void> {
     // Also update the route document with latest info
-    const routeRef = doc(db, 'routes', update.routeId);
-    await updateDoc(routeRef, {
-      'navigationData.lastUpdated': Timestamp.now()
+    const routeRef = ref(rtdb, 'routes/' + navUpdate.routeId);
+    await update(routeRef, {
+        [`navigationData/updates/${navUpdate.userId}`]: {
+        ...navUpdate,
+        timestamp: serverTimestamp()
+        }
     });
-
-    console.log(`Navigation progress updated for route ${update.routeId}`);
   }
 
   /**
@@ -76,32 +71,18 @@ export class NavigationService {
    * @param userId - The ID of the user
    */
   static async endNavigation(routeId: string, userId: string): Promise<void> {
-    const routeRef = doc(db, 'routes', routeId);
+    const routeRef = ref(rtdb, 'routes/' + routeId);
     
-    await updateDoc(routeRef, {
-      'navigationData.activeNavigators': arrayRemove(userId),
-      'navigationData.lastUpdated': Timestamp.now()
+    await update(routeRef, {
+      'navigationData/currentStatus': "completed",
+      [`navigationData/activeNavigators/${userId}`]: null,
+      'navigationData/lastUpdated': serverTimestamp()
     });
-
-    // Update navigation session status
-    const sessionsRef = collection(db, 'navigationSessions');
-    const sessionQuery = query(
-      sessionsRef,
-      where('routeId', '==', routeId),
-      where('userId', '==', userId),
-      where('status', '==', 'active')
-    );
-
-    const sessionSnapshot = await getDocs(sessionQuery);
-    sessionSnapshot.forEach(async (sessionDoc) => {
-      await updateDoc(sessionDoc.ref, {
-        status: 'completed',
-        completedAt: Timestamp.now()
-      });
-    });
-
+    
     console.log(`Navigation ended for route ${routeId} by user ${userId}`);
   }
+
+  
 
   /**
    * Listen to real-time navigation updates for a route
@@ -109,26 +90,26 @@ export class NavigationService {
    * @param callback - Callback function to handle updates
    * @returns Unsubscribe function
    */
-  static subscribeToNavigationUpdates(
-    routeId: string, 
-    callback: (updates: NavigationUpdate[]) => void
-  ): () => void {
-    const updatesRef = collection(db, 'navigationUpdates');
-    const updatesQuery = query(
-      updatesRef,
-      where('routeId', '==', routeId),
-      orderBy('timestamp', 'desc')
-    );
+  // static subscribeToNavigationUpdates(
+  //   routeId: string, 
+  //   callback: (updates: NavigationUpdate[]) => void
+  // ): () => void {
+  //   const updatesRef = ref(rtdb, `navigationUpdates/routeId/${routeId}`);
+  //   const updatesQuery = query(updatesRef, orderByValue());
 
-    return onSnapshot(updatesQuery, (snapshot) => {
-      const updates = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as (NavigationUpdate & { id: string })[];
+  //   // Maybe should be a pubsub function?
+
+  //   // return onSnapshot(updatesQuery, (snapshot) => {
+  //   //   const updates = snapshot.docs.map(doc => ({
+  //   //     id: doc.id,
+  //   //     ...doc.data()
+  //   //   })) as (NavigationUpdate & { id: string })[];
       
-      callback(updates);
-    });
-  }
+  //   //   callback(updates);
+
+    
+  //   // });
+  // }
 
   /**
    * Get a route by ID
@@ -136,16 +117,20 @@ export class NavigationService {
    * @returns Route document or null if not found
    */
   static async getRoute(routeId: string): Promise<RouteDocument | null> {
+    let routeSnap = null;
+
     try {
-      const routeRef = doc(db, 'routes', routeId);
-      const routeSnap = await getDoc(routeRef);
+      get(child(ref(rtdb), `routes/${routeId}`)).then((snapshot) => {
+        if (snapshot.exists()) {
+          routeSnap = snapshot.val();
+        } else {
+          console.log("No data available");
+        }
+      }).catch((error) => {
+        console.error(error);
+      });
       
-      if (!routeSnap.exists()) {
-        console.warn(`Route ${routeId} not found`);
-        return null;
-      }
-      
-      return { id: routeSnap.id, ...routeSnap.data() } as RouteDocument;
+      return { routeSnap } as unknown as RouteDocument; // TODO Potential issue
     } catch (error) {
       console.error('Error getting route:', error);
       return null;
@@ -153,27 +138,23 @@ export class NavigationService {
   }
 
   /**
-   * Get active navigation sessions for a route
-   * @param routeId - The ID of the route
-   * @returns Array of active navigation sessions
+   * Get active users in a navigation session
+   * @returns Array of active users in a session
    */
-  static async getActiveNavigators(routeId: string): Promise<NavigationSession[]> {
-    try {
-      const sessionsRef = collection(db, 'navigationSessions');
-      const activeQuery = query(
-        sessionsRef,
-        where('routeId', '==', routeId),
-        where('status', '==', 'active')
-      );
+  // static async getActiveNavigators(): Promise<string[]> {
+  //   try {
+  //     const sessionsRef = ref(rtdb, 'navigationSessions');
+  //     const activeQuery = get(child(sessionsRef, "userId")).then((snapshot) => {
+  //       if (snapshot.exists()) {
+  //         snapshot.forEach(snapshot.val) => {
 
-      const querySnapshot = await getDocs(activeQuery);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as (NavigationSession & { id: string })[];
-    } catch (error) {
-      console.error('Error getting active navigators:', error);
-      return [];
-    }
-  }
+  //         }
+  //         return snapshot.val();
+  //       }
+  //     });
+  //   } catch (error) {
+  //     console.error('Error getting active navigators:', error);
+  //     return [];
+  //   }
+  // }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavigationUpdate } from '../constants/route';
-import { NavigationService } from '../services/routes';
+import { NavigationService } from '../services/navigation';
 
 export function useNavigationUpdates(routeId: string) {
   const [updates, setUpdates] = useState<NavigationUpdate[]>([]);

@@ -9,7 +9,6 @@
 
 import * as admin from "firebase-admin";
 import { setGlobalOptions } from "firebase-functions";
-
 import { createUser, deleteUser } from "./auth";
 import {
     createParty,

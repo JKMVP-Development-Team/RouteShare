@@ -5,6 +5,7 @@
 
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
+import { connectDatabaseEmulator, getDatabase } from 'firebase/database';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 import { doSignOut } from '../services/auth';
@@ -23,6 +24,7 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const rtdb = getDatabase(app);
 export const functions = getFunctions(app);
 
 // Connect to emulators
@@ -34,6 +36,7 @@ export const connectToEmulators = () => {
       connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
       connectFirestoreEmulator(db, 'localhost', 8082);
       connectFunctionsEmulator(functions, 'localhost', 5001);
+      connectDatabaseEmulator(rtdb, 'localhost', 9000);
       emulatorsConnected = true;
       console.log('🔧 Connected to Firebase emulators');
     } catch (error) {

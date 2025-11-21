@@ -1,6 +1,7 @@
 // import { getAnalytics } from "firebase/analytics"; // TODO: Explore this later
 import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
+import { getDatabase } from 'firebase/database';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 import { Platform } from 'react-native';
@@ -16,7 +17,7 @@ if (!apiKey) {
 }
 
 const firebaseConfig = {
-  apiKey,
+  apiKey: "AIzaSyBhxgJlO1km8ZjLW_tZhCrokwHMGHsI5ww",
   authDomain: "routeshare-b1b01.firebaseapp.com",
   projectId: "routeshare-b1b01",
   messagingSenderId: "619122582619",
@@ -28,6 +29,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const rtdb = getDatabase(app)
 const functions = getFunctions(app);
 
 // For Android Emulator, use 10.0.2.2 to access localhost
@@ -64,5 +66,5 @@ try {
   console.error("❌ Firebase emulators connection error:", error);
 }
 
-export { app, auth, db, functions };
+export { app, auth, db, functions, rtdb };
 
